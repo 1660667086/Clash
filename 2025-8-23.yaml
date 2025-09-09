@@ -1,33 +1,139 @@
-mixed-port: 7890
-allow-lan: true
-mode: Rule
-log-level: info
-
-dns:
-  enable: true
-  listen: :53
-  ipv6: true
-  enhanced-mode: fake-ip
-  nameserver:
-    - 8.8.8.8
-    - 1.1.1.1
-    - 2001:4860:4860::8888
-    - 2606:4700:4700::1111
-
 proxies:
-  - name: My-SS-IPv6
+  - name: "My-Shadowsocks-Server"
     type: ss
-    server: "[2402:4e00:c011:2a00:24a:8f9e:80e8:0]"
-    port: 28537
+    server: 43.202.79.169
+    port: 55346
     cipher: aes-256-gcm
     password: "1"
-    udp: true
+    plugin: obfs
+    plugin-opts:
+      mode: http
+      host: cloudfront.com
 
 proxy-groups:
-  - name: Proxy
+  - name: "Proxy"
     type: select
     proxies:
-      - My-SS-IPv6
+      - "My-Shadowsocks-Server"
 
 rules:
+  # 直连中国大陆地区的 IP 地址
+  - GEOIP,CN,DIRECT
+
+  # 直连中国大陆常用的域名
+  - DOMAIN-SUFFIX,cn,DIRECT
+  - DOMAIN-SUFFIX,qq.com,DIRECT
+  - DOMAIN-SUFFIX,baidu.com,DIRECT
+  - DOMAIN-SUFFIX,weibo.com,DIRECT
+  - DOMAIN-SUFFIX,wechat.com,DIRECT
+  - DOMAIN-SUFFIX,alipay.com,DIRECT
+  - DOMAIN-SUFFIX,taobao.com,DIRECT
+  - DOMAIN-SUFFIX,tmall.com,DIRECT
+  - DOMAIN-SUFFIX,jd.com,DIRECT
+  - DOMAIN-SUFFIX,sina.com.cn,DIRECT
+  - DOMAIN-SUFFIX,163.com,DIRECT
+  - DOMAIN-SUFFIX,sohu.com,DIRECT
+  - DOMAIN-SUFFIX,sogou.com,DIRECT
+  - DOMAIN-SUFFIX,iqiyi.com,DIRECT
+  - DOMAIN-SUFFIX,youku.com,DIRECT
+  - DOMAIN-SUFFIX,bilibili.com,DIRECT
+  - DOMAIN-SUFFIX,xiaomi.com,DIRECT
+  - DOMAIN-SUFFIX,huawei.com,DIRECT
+  - DOMAIN-SUFFIX,mi.com,DIRECT
+  - DOMAIN-SUFFIX,cctv.com,DIRECT
+  - DOMAIN-SUFFIX,zhihu.com,DIRECT
+  - DOMAIN-SUFFIX,meituan.com,DIRECT
+  - DOMAIN-SUFFIX,dianping.com,DIRECT
+  - DOMAIN-SUFFIX,ctrip.com,DIRECT
+  - DOMAIN-SUFFIX,xiami.com,DIRECT
+  - DOMAIN-SUFFIX,ifeng.com,DIRECT
+  - DOMAIN-SUFFIX,people.com.cn,DIRECT
+  - DOMAIN-SUFFIX,xinhuanet.com,DIRECT
+
+  # 直连中国大陆新增域名
+  - DOMAIN-SUFFIX,douyin.com,DIRECT
+  - DOMAIN-SUFFIX,huya.com,DIRECT
+  - DOMAIN-SUFFIX,douyu.com,DIRECT
+  - DOMAIN-SUFFIX,acfun.cn,DIRECT
+  - DOMAIN-SUFFIX,le.com,DIRECT
+  - DOMAIN-SUFFIX,autohome.com.cn,DIRECT
+  - DOMAIN-SUFFIX,xueqiu.com,DIRECT
+  - DOMAIN-SUFFIX,51job.com,DIRECT
+  - DOMAIN-SUFFIX,lagou.com,DIRECT
+  - DOMAIN-SUFFIX,kaola.com,DIRECT
+  - DOMAIN-SUFFIX,smzdm.com,DIRECT
+  - DOMAIN-SUFFIX,dianping.com,DIRECT
+  - DOMAIN-SUFFIX,feng.com,DIRECT
+  - DOMAIN-SUFFIX,autohome.com.cn,DIRECT
+  - DOMAIN-SUFFIX,yihaodian.com,DIRECT
+  - DOMAIN-SUFFIX,yhd.com,DIRECT
+  - DOMAIN-SUFFIX,dangdang.com,DIRECT
+  - DOMAIN-SUFFIX,guazi.com,DIRECT
+  - DOMAIN-SUFFIX,58.com,DIRECT
+  - DOMAIN-SUFFIX,zhaopin.com,DIRECT
+  - DOMAIN-SUFFIX,ganji.com,DIRECT
+  - DOMAIN-SUFFIX,xcar.com.cn,DIRECT
+  - DOMAIN-SUFFIX,csdn.net,DIRECT
+  - DOMAIN-SUFFIX,163.com,DIRECT
+  - DOMAIN-SUFFIX,toutiao.com,DIRECT
+  - DOMAIN-SUFFIX,chinadaily.com.cn,DIRECT
+  - DOMAIN-SUFFIX,bankcomm.com,DIRECT
+  - DOMAIN-SUFFIX,ccb.com,DIRECT
+  - DOMAIN-SUFFIX,icbc.com.cn,DIRECT
+  - DOMAIN-SUFFIX,pingan.com,DIRECT
+  - DOMAIN-SUFFIX,cmbchina.com,DIRECT
+  - DOMAIN-SUFFIX,10086.cn,DIRECT
+  - DOMAIN-SUFFIX,10010.cn,DIRECT
+  - DOMAIN-SUFFIX,chinaunicom.com,DIRECT
+  - DOMAIN-SUFFIX,chinabank.com.cn,DIRECT
+  - DOMAIN-SUFFIX,csair.com,DIRECT
+  - DOMAIN-SUFFIX,ceair.com,DIRECT
+  - DOMAIN-SUFFIX,springairlines.com,DIRECT
+  - DOMAIN-SUFFIX,12306.cn,DIRECT
+  - DOMAIN-SUFFIX,ctrip.com,DIRECT
+  - DOMAIN-SUFFIX,fliggy.com,DIRECT
+  - DOMAIN-SUFFIX,qunar.com,DIRECT
+  - DOMAIN-SUFFIX,ctrip.com,DIRECT
+  - DOMAIN-SUFFIX,elong.com,DIRECT
+  - DOMAIN-SUFFIX,suning.com,DIRECT
+  - DOMAIN-SUFFIX,gome.com.cn,DIRECT
+  - DOMAIN-SUFFIX,smzdm.com,DIRECT
+  - DOMAIN-SUFFIX,dangdang.com,DIRECT
+  - DOMAIN-SUFFIX,icbc.com.cn,DIRECT
+  - DOMAIN-SUFFIX,pingan.com,DIRECT
+  - DOMAIN-SUFFIX,cmbchina.com,DIRECT
+  - DOMAIN-SUFFIX,cebbank.com,DIRECT
+  - DOMAIN-SUFFIX,bankcomm.com,DIRECT
+  - DOMAIN-SUFFIX,10010.com,DIRECT
+  - DOMAIN-SUFFIX,10086.cn,DIRECT
+  - DOMAIN-SUFFIX,10010.com,DIRECT
+  - DOMAIN-SUFFIX,alipay.com,DIRECT
+  - DOMAIN-SUFFIX,weixin.qq.com,DIRECT
+  - DOMAIN-SUFFIX,baidu.com,DIRECT
+  - DOMAIN-SUFFIX,taobao.com,DIRECT
+
+  # 代理一些特定的国际网站
+  - DOMAIN-SUFFIX,google.com,Proxy
+  - DOMAIN-SUFFIX,facebook.com,Proxy
+  - DOMAIN-SUFFIX,twitter.com,Proxy
+  - DOMAIN-SUFFIX,youtube.com,Proxy
+  - DOMAIN-SUFFIX,instagram.com,Proxy
+  - DOMAIN-SUFFIX,wikipedia.org,Proxy
+  - DOMAIN-SUFFIX,linkedin.com,Proxy
+  - DOMAIN-SUFFIX,pinterest.com,Proxy
+  - DOMAIN-SUFFIX,whatsapp.com,Proxy
+  - DOMAIN-SUFFIX,telegram.org,Proxy
+  - DOMAIN-SUFFIX,github.com,Proxy
+  - DOMAIN-SUFFIX,amazon.com,Proxy
+  - DOMAIN-SUFFIX,netflix.com,Proxy
+  - DOMAIN-SUFFIX,hulu.com,Proxy
+  - DOMAIN-SUFFIX,vimeo.com,Proxy
+  - DOMAIN-SUFFIX,bbc.co.uk,Proxy
+  - DOMAIN-SUFFIX,nytimes.com,Proxy
+  - DOMAIN-SUFFIX,reuters.com,Proxy
+  - DOMAIN-SUFFIX,cnn.com,Proxy
+  - DOMAIN-SUFFIX,wsj.com,Proxy
+  - DOMAIN-SUFFIX,bloomberg.com,Proxy
+
+  # 默认匹配规则
   - MATCH,Proxy
