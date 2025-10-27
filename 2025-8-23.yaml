@@ -1,139 +1,74 @@
+# ===== Core =====
+mixed-port: 7890
+allow-lan: true
+mode: Rule
+log-level: info
+ipv6: true
+unified-delay: true
+
+# 可选：本地 API（给 Clash GUI 用）
+external-controller: 127.0.0.1:9090
+
+# ===== TUN (转发系统级 UDP/IPv6) =====
+tun:
+  enable: true
+  stack: system              # 可改为 gvisor 视环境而定
+  auto-route: true
+  auto-detect-interface: true
+  dns-hijack:
+    - any:53
+
+# ===== DNS =====
+dns:
+  enable: true
+  listen: 0.0.0.0:1053
+  ipv6: true
+  enhanced-mode: fake-ip
+  default-nameserver:
+    - 114.114.114.114
+    - 223.5.5.5
+    - 8.8.8.8
+    - 2001:4860:4860::8888
+  nameserver:
+    - https://dns.alidns.com/dns-query
+    - https://doh.pub/dns-query
+    - https://dns.google/dns-query
+    - 2001:4860:4860::8844
+  fake-ip-filter:
+    - "*.lan"
+    - "*.local"
+    - "localhost"
+
+# ===== 代理节点 =====
 proxies:
-  - name: "My-Shadowsocks-Server"
+  - name: "SS-43.138.198.26"
     type: ss
-    server: 52.79.220.85
+    server: 43.138.198.26
     port: 80
     cipher: aes-256-gcm
     password: "1"
-    plugin: obfs
-    plugin-opts:
-      mode: http
-      host: cloudfront.com
+    udp: true
 
+# ===== 代理分组 =====
 proxy-groups:
   - name: "Proxy"
     type: select
     proxies:
-      - "My-Shadowsocks-Server"
+      - "SS-43.138.198.26"
+      - "DIRECT"
 
+# ===== 规则（除本机/局域网外，一律走代理） =====
 rules:
-  # 直连中国大陆地区的 IP 地址
-  - GEOIP,CN,DIRECT
-
-  # 直连中国大陆常用的域名
-  - DOMAIN-SUFFIX,cn,DIRECT
-  - DOMAIN-SUFFIX,qq.com,DIRECT
-  - DOMAIN-SUFFIX,baidu.com,DIRECT
-  - DOMAIN-SUFFIX,weibo.com,DIRECT
-  - DOMAIN-SUFFIX,wechat.com,DIRECT
-  - DOMAIN-SUFFIX,alipay.com,DIRECT
-  - DOMAIN-SUFFIX,taobao.com,DIRECT
-  - DOMAIN-SUFFIX,tmall.com,DIRECT
-  - DOMAIN-SUFFIX,jd.com,DIRECT
-  - DOMAIN-SUFFIX,sina.com.cn,DIRECT
-  - DOMAIN-SUFFIX,163.com,DIRECT
-  - DOMAIN-SUFFIX,sohu.com,DIRECT
-  - DOMAIN-SUFFIX,sogou.com,DIRECT
-  - DOMAIN-SUFFIX,iqiyi.com,DIRECT
-  - DOMAIN-SUFFIX,youku.com,DIRECT
-  - DOMAIN-SUFFIX,bilibili.com,DIRECT
-  - DOMAIN-SUFFIX,xiaomi.com,DIRECT
-  - DOMAIN-SUFFIX,huawei.com,DIRECT
-  - DOMAIN-SUFFIX,mi.com,DIRECT
-  - DOMAIN-SUFFIX,cctv.com,DIRECT
-  - DOMAIN-SUFFIX,zhihu.com,DIRECT
-  - DOMAIN-SUFFIX,meituan.com,DIRECT
-  - DOMAIN-SUFFIX,dianping.com,DIRECT
-  - DOMAIN-SUFFIX,ctrip.com,DIRECT
-  - DOMAIN-SUFFIX,xiami.com,DIRECT
-  - DOMAIN-SUFFIX,ifeng.com,DIRECT
-  - DOMAIN-SUFFIX,people.com.cn,DIRECT
-  - DOMAIN-SUFFIX,xinhuanet.com,DIRECT
-
-  # 直连中国大陆新增域名
-  - DOMAIN-SUFFIX,douyin.com,DIRECT
-  - DOMAIN-SUFFIX,huya.com,DIRECT
-  - DOMAIN-SUFFIX,douyu.com,DIRECT
-  - DOMAIN-SUFFIX,acfun.cn,DIRECT
-  - DOMAIN-SUFFIX,le.com,DIRECT
-  - DOMAIN-SUFFIX,autohome.com.cn,DIRECT
-  - DOMAIN-SUFFIX,xueqiu.com,DIRECT
-  - DOMAIN-SUFFIX,51job.com,DIRECT
-  - DOMAIN-SUFFIX,lagou.com,DIRECT
-  - DOMAIN-SUFFIX,kaola.com,DIRECT
-  - DOMAIN-SUFFIX,smzdm.com,DIRECT
-  - DOMAIN-SUFFIX,dianping.com,DIRECT
-  - DOMAIN-SUFFIX,feng.com,DIRECT
-  - DOMAIN-SUFFIX,autohome.com.cn,DIRECT
-  - DOMAIN-SUFFIX,yihaodian.com,DIRECT
-  - DOMAIN-SUFFIX,yhd.com,DIRECT
-  - DOMAIN-SUFFIX,dangdang.com,DIRECT
-  - DOMAIN-SUFFIX,guazi.com,DIRECT
-  - DOMAIN-SUFFIX,58.com,DIRECT
-  - DOMAIN-SUFFIX,zhaopin.com,DIRECT
-  - DOMAIN-SUFFIX,ganji.com,DIRECT
-  - DOMAIN-SUFFIX,xcar.com.cn,DIRECT
-  - DOMAIN-SUFFIX,csdn.net,DIRECT
-  - DOMAIN-SUFFIX,163.com,DIRECT
-  - DOMAIN-SUFFIX,toutiao.com,DIRECT
-  - DOMAIN-SUFFIX,chinadaily.com.cn,DIRECT
-  - DOMAIN-SUFFIX,bankcomm.com,DIRECT
-  - DOMAIN-SUFFIX,ccb.com,DIRECT
-  - DOMAIN-SUFFIX,icbc.com.cn,DIRECT
-  - DOMAIN-SUFFIX,pingan.com,DIRECT
-  - DOMAIN-SUFFIX,cmbchina.com,DIRECT
-  - DOMAIN-SUFFIX,10086.cn,DIRECT
-  - DOMAIN-SUFFIX,10010.cn,DIRECT
-  - DOMAIN-SUFFIX,chinaunicom.com,DIRECT
-  - DOMAIN-SUFFIX,chinabank.com.cn,DIRECT
-  - DOMAIN-SUFFIX,csair.com,DIRECT
-  - DOMAIN-SUFFIX,ceair.com,DIRECT
-  - DOMAIN-SUFFIX,springairlines.com,DIRECT
-  - DOMAIN-SUFFIX,12306.cn,DIRECT
-  - DOMAIN-SUFFIX,ctrip.com,DIRECT
-  - DOMAIN-SUFFIX,fliggy.com,DIRECT
-  - DOMAIN-SUFFIX,qunar.com,DIRECT
-  - DOMAIN-SUFFIX,ctrip.com,DIRECT
-  - DOMAIN-SUFFIX,elong.com,DIRECT
-  - DOMAIN-SUFFIX,suning.com,DIRECT
-  - DOMAIN-SUFFIX,gome.com.cn,DIRECT
-  - DOMAIN-SUFFIX,smzdm.com,DIRECT
-  - DOMAIN-SUFFIX,dangdang.com,DIRECT
-  - DOMAIN-SUFFIX,icbc.com.cn,DIRECT
-  - DOMAIN-SUFFIX,pingan.com,DIRECT
-  - DOMAIN-SUFFIX,cmbchina.com,DIRECT
-  - DOMAIN-SUFFIX,cebbank.com,DIRECT
-  - DOMAIN-SUFFIX,bankcomm.com,DIRECT
-  - DOMAIN-SUFFIX,10010.com,DIRECT
-  - DOMAIN-SUFFIX,10086.cn,DIRECT
-  - DOMAIN-SUFFIX,10010.com,DIRECT
-  - DOMAIN-SUFFIX,alipay.com,DIRECT
-  - DOMAIN-SUFFIX,weixin.qq.com,DIRECT
-  - DOMAIN-SUFFIX,baidu.com,DIRECT
-  - DOMAIN-SUFFIX,taobao.com,DIRECT
-
-  # 代理一些特定的国际网站
-  - DOMAIN-SUFFIX,google.com,Proxy
-  - DOMAIN-SUFFIX,facebook.com,Proxy
-  - DOMAIN-SUFFIX,twitter.com,Proxy
-  - DOMAIN-SUFFIX,youtube.com,Proxy
-  - DOMAIN-SUFFIX,instagram.com,Proxy
-  - DOMAIN-SUFFIX,wikipedia.org,Proxy
-  - DOMAIN-SUFFIX,linkedin.com,Proxy
-  - DOMAIN-SUFFIX,pinterest.com,Proxy
-  - DOMAIN-SUFFIX,whatsapp.com,Proxy
-  - DOMAIN-SUFFIX,telegram.org,Proxy
-  - DOMAIN-SUFFIX,github.com,Proxy
-  - DOMAIN-SUFFIX,amazon.com,Proxy
-  - DOMAIN-SUFFIX,netflix.com,Proxy
-  - DOMAIN-SUFFIX,hulu.com,Proxy
-  - DOMAIN-SUFFIX,vimeo.com,Proxy
-  - DOMAIN-SUFFIX,bbc.co.uk,Proxy
-  - DOMAIN-SUFFIX,nytimes.com,Proxy
-  - DOMAIN-SUFFIX,reuters.com,Proxy
-  - DOMAIN-SUFFIX,cnn.com,Proxy
-  - DOMAIN-SUFFIX,wsj.com,Proxy
-  - DOMAIN-SUFFIX,bloomberg.com,Proxy
-
-  # 默认匹配规则
+  # 本机与局域网直连，避免回环/内网被代理
+  - DOMAIN-SUFFIX,local,DIRECT
+  - DOMAIN-SUFFIX,lan,DIRECT
+  - IP-CIDR,127.0.0.0/8,DIRECT,no-resolve
+  - IP-CIDR,10.0.0.0/8,DIRECT,no-resolve
+  - IP-CIDR,172.16.0.0/12,DIRECT,no-resolve
+  - IP-CIDR,192.168.0.0/16,DIRECT,no-resolve
+  - IP-CIDR,224.0.0.0/4,DIRECT,no-resolve          # 组播
+  - IP-CIDR,fe80::/10,DIRECT,no-resolve             # 链路本地 IPv6
+  - IP-CIDR,fc00::/7,DIRECT,no-resolve              # 私有 IPv6
+  - GEOIP,PRIVATE,DIRECT                            # 其它私有/保留网段
+  # 其余全部代理
   - MATCH,Proxy
