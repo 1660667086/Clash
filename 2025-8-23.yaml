@@ -52,7 +52,7 @@ proxies:
   - name: "My-Shadowsocks-Server"
     type: ss
     server: 168.93.214.178
-    port: 11151
+    port: 80
     cipher: aes-256-gcm
     password: "11"
     plugin: obfs
@@ -708,3 +708,4 @@ rules:
 
   # Final
   - MATCH,Proxy
+
