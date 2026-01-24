@@ -38,10 +38,10 @@ dns:
 proxies:
   - name: My-Shadowsocks-Server
     type: ss
-    server: 35.72.9.245
-    port: 80
+    server: 192.243.115.105
+    port: 50090
     cipher: aes-256-gcm
-    password: 1
+    password: 11
     plugin: obfs
     plugin-opts:
       mode: http
@@ -109,3 +109,4 @@ rules:
 
   # ===== Final =====
   - MATCH,Proxy
+
