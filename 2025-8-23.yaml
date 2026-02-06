@@ -51,7 +51,7 @@ hosts:
 proxies:
   - name: "My-Shadowsocks-Server"
     type: ss
-    server: 166.88.77.26
+    server: 
     port: 80
     cipher: aes-256-gcm
     password: "1"
@@ -708,6 +708,7 @@ rules:
 
   # Final
   - MATCH,Proxy
+
 
 
 
