@@ -41,7 +41,7 @@ proxies:
     server: 47.243.80.186
     port: 8080
     cipher: aes-256-gcm
-    password: 1
+    password: 2
     plugin: obfs
     plugin-opts:
       mode: http
