@@ -51,10 +51,10 @@ hosts:
 proxies:
   - name: "My-Shadowsocks-Server"
     type: ss
-    server: 8.218.190.189
-    port: 37908
+    server: 38.65.95.153
+    port: 28185
     cipher: aes-256-gcm
-    password: "zJxRt6kS0Y"
+    password: "11"
     plugin: obfs
     plugin-opts:
       mode: http
