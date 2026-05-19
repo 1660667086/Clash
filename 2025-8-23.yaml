@@ -5,23 +5,24 @@ log-level: info
 external-controller: 127.0.0.1:9090
 
 proxies:
-  - name: "hysteria2-user1"
+  - name: "5sny454z"
     type: hysteria2
     server: 13.112.58.172
     port: 80
-    password: "272d135cd3709ad522292a93d69dd520"
+    password: "0daab7a1-dac6-4b6c-b14f-62aed4c8650d"
     sni: "www.bing.com"
     skip-cert-verify: true
     obfs: salamander
-    obfs-password: "112233445566"
+    obfs-password: "XErkJLidCTOEOV5h4OdARWs4y6dOL2Ug"
     alpn:
       - h3
+    fingerprint: chrome
 
 proxy-groups:
   - name: "GLOBAL"
     type: select
     proxies:
-      - "hysteria2-user1"
+      - "5sny454z"
 
 rules:
   - MATCH,GLOBAL
