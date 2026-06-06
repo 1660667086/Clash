@@ -54,7 +54,7 @@ proxies:
     server: 8.218.253.29
     port: 13442
     cipher: aes-256-gcm
-    password: "1122"
+    password: 1122
     plugin: obfs
     plugin-opts:
       mode: http
