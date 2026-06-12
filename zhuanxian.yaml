@@ -51,7 +51,7 @@ hosts:
 proxies:
   - name: "My-Shadowsocks-Server"
     type: ss
-    server: 192.243.115.105
+    server: 3
     port: 39422
     cipher: aes-256-gcm
     password: "y53RJ0eY3F"
