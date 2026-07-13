@@ -54,7 +54,7 @@ proxies:
     server: 192.243.115.105
     port: 44785
     cipher: aes-256-gcm
-    password: g4VBNj3Zg3
+    password: g4VBN3Z
     plugin: obfs
     plugin-opts:
       mode: http
