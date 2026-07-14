@@ -54,7 +54,7 @@ proxies:
     server: 192.243.115.105
     port: 57094
     cipher: aes-256-gcm
-    password: NMD6fze6hn
+    password: NMD6fze6
     plugin: obfs
     plugin-opts:
       mode: http
