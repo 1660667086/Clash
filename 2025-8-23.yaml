@@ -52,9 +52,9 @@ proxies:
   - name: "My-Shadowsocks-Server"
     type: ss
     server: 192.243.115.105
-    port: 57094
+    port: 45771
     cipher: aes-256-gcm
-    password: NMD6fze6
+    password: 1RC6dGYDpV
     plugin: obfs
     plugin-opts:
       mode: http
