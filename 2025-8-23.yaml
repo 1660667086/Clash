@@ -1,58 +1,945 @@
-# Mihomo / Clash Meta configuration
-# The Shadowsocks server endpoint below is the IPv4 address provided by the user.
-# IPv6 traffic and AAAA DNS resolution are enabled globally.
+# 国外 AI 分流配置；OpenClash 优化版；日期：2026-09-28
+# AI-US -> rbcmdrsc -> 8.218.129.197:51650 -> 用户的美国中转出口
+# HK-Proxy / Douyin-IP -> HK-Douyin -> 8.218.129.197:80 -> 香港
+# 已列出的域名及其适用子域覆盖网页、手机与桌面客户端；未知域名仍可能遗漏。
+# 共用的登录、验证码、存储、Bing/GitHub 主机也可能承载非 AI 请求；这些请求同走美国。
+# 不依赖新增 AI 远程规则集；国内分流使用 OpenClash 的 GeoSite、原 GEOIP 数据和本地 1.yaml。
+# 国内域名直连使用 OpenClash 的 GeoSite.dat 中国域名列表，需在插件内保持数据库可用。
+# OpenClash 需运行在规则模式，且接管设备流量/DNS/UDP；本文件不会自动更改路由器防火墙。
+# 启用后重启 OpenClash，手机重新连接 Wi-Fi 并完全退出后重开 AI App。
+# 插件的 DNS / 嗅探覆写应保留本文件设置；自定义规则不得抢在 AI 规则前。
+# DNS 设置不能决定网站看到的出口 IP；实际出口仍取决于命中节点及其中转。
+# 此文件无法强制路由器接管设备自带的 VPN / 私密中继 / 加密 DNS。
+# 资料：MetaCubeX/meta-rules-dat category-ai-!cn（下载后内嵌快照）
+# https://help.openai.com/en/articles/9247338-network-recommendations-for-chatgpt-errors-on-web-and-apps
+# https://code.claude.com/docs/en/network-config
+# https://docs.github.com/en/copilot/reference/copilot-allowlist-reference
+# https://cursor.com/docs/enterprise/network-configuration
+# https://wiki.metacubex.one/en/config/sniff/
+# https://wiki.metacubex.one/en/config/dns/
 
-mixed-port: 7890
+port: 7890
+socks-port: 7891
+redir-port: 7892
 allow-lan: true
-bind-address: "*"
 mode: rule
 log-level: info
-ipv6: true
-unified-delay: true
-tcp-concurrent: true
-
-lan-allowed-ips:
-  - 0.0.0.0/0
-  - ::/0
+external-controller: 0.0.0.0:9090
 
 dns:
   enable: true
-  listen: 0.0.0.0:1053
-  ipv6: true
+  # OpenClash 默认 DNS 监听端口；插件设置可覆盖此项。
+  listen: 0.0.0.0:7874
+  ipv6: false
   enhanced-mode: fake-ip
   fake-ip-range: 198.18.0.1/16
-  fake-ip-range6: fc00::/18
+  prefer-h3: false
   default-nameserver:
     - 223.5.5.5
     - 119.29.29.29
-  nameserver:
-    - https://dns.alidns.com/dns-query
-    - https://doh.pub/dns-query
+  # 节点自身解析独立，避免代理 DNS 的循环依赖。
   proxy-server-nameserver:
-    - https://dns.alidns.com/dns-query
-    - https://doh.pub/dns-query
-  fake-ip-filter:
-    - "*.lan"
-    - "*.local"
-    - "time.*.com"
-    - "ntp.*.com"
+    - 223.5.5.5
+    - 119.29.29.29
+  nameserver:
+    - 223.5.5.5
+    - 119.29.29.29
+  # 命中直连规则后，使用国内 DNS 获取直连地址，避免香港备用解析影响下载 CDN。
+  direct-nameserver:
+    - 223.5.5.5
+    - 119.29.29.29
+  direct-nameserver-follow-policy: false
+  # 普通国外域名的备用解析通过香港节点使用加密 DNS。
+  fallback:
+    - "https://1.1.1.1/dns-query#HK-Douyin"
+    - "https://8.8.8.8/dns-query#HK-Douyin"
+  # AI 域名若需由本机解析，固定通过 51650 查询，不使用香港备用 DNS。
+  # Fake-IP 模式下，能由节点远程解析的连接仍交给相应节点处理。
+  # YAML 锚点仅用于复用同一组 DNS 地址。
+  nameserver-policy:
+    "+.openai.com": &ai_us_dns
+      - "https://1.1.1.1/dns-query#rbcmdrsc"
+      - "https://8.8.8.8/dns-query#rbcmdrsc"
+    "geosite:microsoft": *ai_us_dns
+    "+.chatgpt.com": *ai_us_dns
+    "+.chat.com": *ai_us_dns
+    "+.oaistatic.com": *ai_us_dns
+    "+.oaiusercontent.com": *ai_us_dns
+    "+.oaistatsig.com": *ai_us_dns
+    "+.openaimerge.com": *ai_us_dns
+    "+.sora.com": *ai_us_dns
+    "+.openai.com.cdn.cloudflare.net": *ai_us_dns
+    "+.chatgpt.livekit.cloud": *ai_us_dns
+    "+.host.livekit.cloud": *ai_us_dns
+    "+.turn.livekit.cloud": *ai_us_dns
+    "openaiapi-site.azureedge.net": *ai_us_dns
+    "openaiassets.blob.core.windows.net": *ai_us_dns
+    "openaicom-api-bdcpf8c6d2e9atf6.z01.azurefd.net": *ai_us_dns
+    "openaicom.imgix.net": *ai_us_dns
+    "openaicomproductionae4b.blob.core.windows.net": *ai_us_dns
+    "production-openaicom-storage.azureedge.net": *ai_us_dns
+    "openai.qualtrics.com": *ai_us_dns
+    "+.anthropic.com": *ai_us_dns
+    "+.claude.ai": *ai_us_dns
+    "+.claude.com": *ai_us_dns
+    "+.clau.de": *ai_us_dns
+    "+.claudeusercontent.com": *ai_us_dns
+    "+.claudemcpcontent.com": *ai_us_dns
+    "+.claudemcpclient.com": *ai_us_dns
+    "servd-anthropic-website.b-cdn.net": *ai_us_dns
+    "+.gemini.google.com": *ai_us_dns
+    "+.bard.google.com": *ai_us_dns
+    "+.aistudio.google.com": *ai_us_dns
+    "+.makersuite.google.com": *ai_us_dns
+    "+.notebooklm.google.com": *ai_us_dns
+    "+.notebook.google.com": *ai_us_dns
+    "+.labs.google.com": *ai_us_dns
+    "+.flow.google.com": *ai_us_dns
+    "+.jules.google.com": *ai_us_dns
+    "+.opal.google.com": *ai_us_dns
+    "+.colab.research.google.com": *ai_us_dns
+    "+.gemini.google": *ai_us_dns
+    "+.notebooklm.google": *ai_us_dns
+    "+.notebook.google": *ai_us_dns
+    "+.generativeai.google": *ai_us_dns
+    "+.deepmind.google": *ai_us_dns
+    "+.deepmind.com": *ai_us_dns
+    "+.labs.google": *ai_us_dns
+    "+.flow.google": *ai_us_dns
+    "+.jules.google": *ai_us_dns
+    "+.opal.google": *ai_us_dns
+    "+.antigravity.google": *ai_us_dns
+    "+.antigravity-unleash.goog": *ai_us_dns
+    "+.ai.studio": *ai_us_dns
+    "+.gemini.gstatic.com": *ai_us_dns
+    "+.stitch.withgoogle.com": *ai_us_dns
+    "+.generativelanguage.googleapis.com": *ai_us_dns
+    "+.robinfrontend-pa.googleapis.com": *ai_us_dns
+    "+.webchannel-robinfrontend-pa.googleapis.com": *ai_us_dns
+    "+.proactivebackend-pa.googleapis.com": *ai_us_dns
+    "+.notebooklm.googleapis.com": *ai_us_dns
+    "+.notebooklm-pa.googleapis.com": *ai_us_dns
+    "+.aisandbox-pa.googleapis.com": *ai_us_dns
+    "+.cloudaicompanion.googleapis.com": *ai_us_dns
+    "+.cloudcode-pa.googleapis.com": *ai_us_dns
+    "+.daily-cloudcode-pa.googleapis.com": *ai_us_dns
+    "+.antigravity.googleapis.com": *ai_us_dns
+    "+.antigravity-pa.googleapis.com": *ai_us_dns
+    "+.aida.googleapis.com": *ai_us_dns
+    "+.aicode.googleapis.com": *ai_us_dns
+    "+.geller-pa.googleapis.com": *ai_us_dns
+    "ai.google.dev": *ai_us_dns
+    "alkalicore-pa.clients6.google.com": *ai_us_dns
+    "alkalimakersuite-pa.clients6.google.com": *ai_us_dns
+    "webchannel-alkalimakersuite-pa.clients6.google.com": *ai_us_dns
+    "webchannel-alkalimakersuite-pa.googleapis.com": *ai_us_dns
+    "waa-pa.clients6.google.com": *ai_us_dns
+    "waa-pa.googleapis.com": *ai_us_dns
+    "+.githubcopilot.com": *ai_us_dns
+    "+.cursor.com": *ai_us_dns
+    "+.cursor.sh": *ai_us_dns
+    "+.cursorapi.com": *ai_us_dns
+    "+.cursor-cdn.com": *ai_us_dns
+    "+.cursorvm.com": *ai_us_dns
+    "+.codeium.com": *ai_us_dns
+    "+.codeiumdata.com": *ai_us_dns
+    "+.windsurf.com": *ai_us_dns
+    "+.windsurf.build": *ai_us_dns
+    "copilot-proxy.githubusercontent.com": *ai_us_dns
+    "copilot-telemetry.githubusercontent.com": *ai_us_dns
+    "copilot-telemetry-service.githubusercontent.com": *ai_us_dns
+    "origin-tracker.githubusercontent.com": *ai_us_dns
+    "copilot-workspace.githubnext.com": *ai_us_dns
+    "copilotprodattachments.blob.core.windows.net": *ai_us_dns
+    "default.exp-tas.com": *ai_us_dns
+    "copilot-reports.github.com": *ai_us_dns
+    "anysphere-binaries.s3.us-east-1.amazonaws.com": *ai_us_dns
+    "+.copilot.microsoft.com": *ai_us_dns
+    "+.copilot.cloud.microsoft": *ai_us_dns
+    "+.copilot.com": *ai_us_dns
+    "+.copilot.ai": *ai_us_dns
+    "+.copilot-stg.com": *ai_us_dns
+    "+.openai.azure.com": *ai_us_dns
+    "+.services.ai.azure.com": *ai_us_dns
+    "+.inference.ai.azure.com": *ai_us_dns
+    "+.cognitiveservices.azure.com": *ai_us_dns
+    "+.api.azureml.ms": *ai_us_dns
+    "ai.azure.com": *ai_us_dns
+    "+.grok.com": *ai_us_dns
+    "+.grokusercontent.com": *ai_us_dns
+    "+.grokipedia.com": *ai_us_dns
+    "+.x.ai": *ai_us_dns
+    "+.grok.x.com": *ai_us_dns
+    "+.perplexity.ai": *ai_us_dns
+    "+.perplexity.com": *ai_us_dns
+    "+.pplx.ai": *ai_us_dns
+    "+.poe.com": *ai_us_dns
+    "+.poecdn.net": *ai_us_dns
+    "accounts.spacex.ai": *ai_us_dns
+    "ppl-ai-file-upload.s3.amazonaws.com": *ai_us_dns
+    "pplx-res.cloudinary.com": *ai_us_dns
+    "+.midjourney.com": *ai_us_dns
+    "+.runwayml.com": *ai_us_dns
+    "+.runwayml.cloud": *ai_us_dns
+    "+.runway.com": *ai_us_dns
+    "+.suno.com": *ai_us_dns
+    "+.suno.ai": *ai_us_dns
+    "+.udio.com": *ai_us_dns
+    "+.elevenlabs.io": *ai_us_dns
+    "+.elevenlabs.com": *ai_us_dns
+    "+.leonardo.ai": *ai_us_dns
+    "+.ideogram.ai": *ai_us_dns
+    "+.pika.art": *ai_us_dns
+    "+.lumalabs.ai": *ai_us_dns
+    "+.luma.ai": *ai_us_dns
+    "+.stability.ai": *ai_us_dns
+    "+.dreamstudio.ai": *ai_us_dns
+    "+.clipdrop.co": *ai_us_dns
+    "+.replicate.com": *ai_us_dns
+    "+.replicate.delivery": *ai_us_dns
+    "+.fal.ai": *ai_us_dns
+    "+.fal.run": *ai_us_dns
+    "+.fal.media": *ai_us_dns
+    "+.heygen.com": *ai_us_dns
+    "+.synthesia.io": *ai_us_dns
+    "runway-datasets.s3.amazonaws.com": *ai_us_dns
+    "runway-datasets.s3.us-east-1.amazonaws.com": *ai_us_dns
+    "runway-uploads-prod.s3.amazonaws.com": *ai_us_dns
+    "runway-uploads-prod.s3.us-east-1.amazonaws.com": *ai_us_dns
+    "dnf8butk8bbsy.cloudfront.net": *ai_us_dns
+    "d1y6zccyuj4x6c.cloudfront.net": *ai_us_dns
+    "d1zxmob2olb5kh.cloudfront.net": *ai_us_dns
+    "dnznrvs05pmza.cloudfront.net": *ai_us_dns
+    "d2jqrm6oza8nb6.cloudfront.net": *ai_us_dns
+    "+.character.ai": *ai_us_dns
+    "+.characterai.io": *ai_us_dns
+    "+.c.ai": *ai_us_dns
+    "+.replika.ai": *ai_us_dns
+    "+.replika.com": *ai_us_dns
+    "+.pi.ai": *ai_us_dns
+    "+.inflection.ai": *ai_us_dns
+    "+.you.com": *ai_us_dns
+    "+.phind.com": *ai_us_dns
+    "+.t3.chat": *ai_us_dns
+    "+.mistral.ai": *ai_us_dns
+    "+.cohere.ai": *ai_us_dns
+    "+.cohere.com": *ai_us_dns
+    "+.huggingface.co": *ai_us_dns
+    "+.huggingface.com": *ai_us_dns
+    "+.hf.co": *ai_us_dns
+    "+.hf.space": *ai_us_dns
+    "+.openrouter.ai": *ai_us_dns
+    "+.groq.com": *ai_us_dns
+    "+.cerebras.ai": *ai_us_dns
+    "+.together.ai": *ai_us_dns
+    "+.together.xyz": *ai_us_dns
+    "+.fireworks.ai": *ai_us_dns
+    "+.deepinfra.com": *ai_us_dns
+    "+.ai21.com": *ai_us_dns
+    "+.h2o.ai": *ai_us_dns
+    "+.lovable.dev": *ai_us_dns
+    "+.lovable.app": *ai_us_dns
+    "+.bolt.new": *ai_us_dns
+    "+.bolt.diy": *ai_us_dns
+    "+.v0.dev": *ai_us_dns
+    "+.v0.app": *ai_us_dns
+    "+.replit.com": *ai_us_dns
+    "+.replit.dev": *ai_us_dns
+    "+.sourcegraph.com": *ai_us_dns
+    "+.tabnine.com": *ai_us_dns
+    "+.codegeex.com": *ai_us_dns
+    "+.gamma.app": *ai_us_dns
+    "+.tome.app": *ai_us_dns
+    "+.beautiful.ai": *ai_us_dns
+    "+.felo.ai": *ai_us_dns
+    "+.genspark.ai": *ai_us_dns
+    "+.consensus.app": *ai_us_dns
+    "+.elicit.com": *ai_us_dns
+    "+.elicit.org": *ai_us_dns
+    "+.scite.ai": *ai_us_dns
+    "+.tripo3d.ai": *ai_us_dns
+    "+.deepwiki.com": *ai_us_dns
+    "+.deepwiki.org": *ai_us_dns
+    "+.jasper.ai": *ai_us_dns
+    "+.kimi.ai": *ai_us_dns
+    "+.moonshot.ai": *ai_us_dns
+    "+.agentclientprotocol.com": *ai_us_dns
+    "+.anythingllm.com": *ai_us_dns
+    "+.arena.ai": *ai_us_dns
+    "+.chutes.ai": *ai_us_dns
+    "+.clawhub.ai": *ai_us_dns
+    "+.crewai.com": *ai_us_dns
+    "+.devin.ai": *ai_us_dns
+    "+.diabrowser.com": *ai_us_dns
+    "+.diabrowser.engineering": *ai_us_dns
+    "+.dify.ai": *ai_us_dns
+    "+.dreamgen.com": *ai_us_dns
+    "+.duck.ai": *ai_us_dns
+    "+.kiro.dev": *ai_us_dns
+    "+.langchain.com": *ai_us_dns
+    "+.lmstudio.ai": *ai_us_dns
+    "+.lovart.ai": *ai_us_dns
+    "+.meta.ai": *ai_us_dns
+    "+.minimax.io": *ai_us_dns
+    "+.mozilla.ai": *ai_us_dns
+    "+.notegpt.io": *ai_us_dns
+    "+.novelai.net": *ai_us_dns
+    "+.ollama.com": *ai_us_dns
+    "+.openart.ai": *ai_us_dns
+    "+.openclaw.ai": *ai_us_dns
+    "+.openspec.dev": *ai_us_dns
+    "+.plannotator.ai": *ai_us_dns
+    "+.qoder.com": *ai_us_dns
+    "+.sider.ai": *ai_us_dns
+    "+.spicywriter.com": *ai_us_dns
+    "+.talkai.info": *ai_us_dns
+    "+.tapnow.ai": *ai_us_dns
+    "+.manus.im": *ai_us_dns
+    "+.liveperson.net": *ai_us_dns
+    "+.lpsnmedia.net": *ai_us_dns
+    "+.comfy.org": *ai_us_dns
+    "+.comfyci.org": *ai_us_dns
+    "+.comfyregistry.org": *ai_us_dns
+    "+.oystermercury.top": *ai_us_dns
+    "+.grazie.ai": *ai_us_dns
+    "+.jetbrains.ai": *ai_us_dns
+    "+.coderabbit.ai": *ai_us_dns
+    "+.manuscdn.com": *ai_us_dns
+    "+.youmind.site": *ai_us_dns
+    "+.youmind.com": *ai_us_dns
+    "+.youmind.ai": *ai_us_dns
+    "+.crixet.com": *ai_us_dns
+    "+.chatgpt.site": *ai_us_dns
+    "+.grazie.aws.intellij.net": *ai_us_dns
+    "+.coderabbit.gallery.vsassets.io": *ai_us_dns
+    "+.gateway.ai.cloudflare.com": *ai_us_dns
+    "+.coze.com": *ai_us_dns
+    "+.marscode.com": *ai_us_dns
+    "+.trae.ai": *ai_us_dns
+    "+.cici.com": *ai_us_dns
+    "+.ciciai.com": *ai_us_dns
+    "+.ciciaicdn.com": *ai_us_dns
+    "+.dola.com": *ai_us_dns
+    "browser-intake-datadoghq.com": *ai_us_dns
+    "o33249.ingest.sentry.io": *ai_us_dns
+    "+.ct.sendgrid.net": *ai_us_dns
+    "+.intercom.io": *ai_us_dns
+    "+.intercomcdn.com": *ai_us_dns
+    "+.statsig.com": *ai_us_dns
+    "+.statsigapi.net": *ai_us_dns
+    "+.featureassets.org": *ai_us_dns
+    "+.prodregistryv2.org": *ai_us_dns
+    "+.featuregates.org": *ai_us_dns
+    "+.client-api.arkoselabs.com": *ai_us_dns
+    "cdn.workos.com": *ai_us_dns
+    "forwarder.workos.com": *ai_us_dns
+    "setup.workos.com": *ai_us_dns
+    "images.workoscdn.com": *ai_us_dns
+    "workos.imgix.net": *ai_us_dns
+    "challenges.cloudflare.com": *ai_us_dns
+    "humb.apple.com": *ai_us_dns
+    "js.stripe.com": *ai_us_dns
+    "o207216.ingest.sentry.io": *ai_us_dns
+    "rum.browser-intake-datadoghq.com": *ai_us_dns
+    "openai-api.arkoselabs.com": *ai_us_dns
+    "static.cloudflareinsights.com": *ai_us_dns
+    "cdn.usefathom.com": *ai_us_dns
+    "http-intake.logs.us5.datadoghq.com": *ai_us_dns
+    "accounts.google.com": *ai_us_dns
+    "accounts.google.com.hk": *ai_us_dns
+    "oauth2.googleapis.com": *ai_us_dns
+    "identitytoolkit.googleapis.com": *ai_us_dns
+    "securetoken.googleapis.com": *ai_us_dns
+    "content-autofill.googleapis.com": *ai_us_dns
+    "play.googleapis.com": *ai_us_dns
+    "apis.google.com": *ai_us_dns
+    "ogs.google.com": *ai_us_dns
+    "www.gstatic.com": *ai_us_dns
+    "ssl.gstatic.com": *ai_us_dns
+    "fonts.gstatic.com": *ai_us_dns
+    "fonts.googleapis.com": *ai_us_dns
+    "lh3.googleusercontent.com": *ai_us_dns
+    "lh4.googleusercontent.com": *ai_us_dns
+    "lh5.googleusercontent.com": *ai_us_dns
+    "lh6.googleusercontent.com": *ai_us_dns
+    "storage.googleapis.com": *ai_us_dns
+    "github.com": *ai_us_dns
+    "api.github.com": *ai_us_dns
+    "github.githubassets.com": *ai_us_dns
+    "avatars.githubusercontent.com": *ai_us_dns
+    "login.live.com": *ai_us_dns
+    "account.live.com": *ai_us_dns
+    "login.microsoftonline.com": *ai_us_dns
+    "account.microsoft.com": *ai_us_dns
+    "login.microsoft.com": *ai_us_dns
+    "aadcdn.msftauth.net": *ai_us_dns
+    "aadcdn.msauth.net": *ai_us_dns
+    "appleid.apple.com": *ai_us_dns
+    "appleid.cdn-apple.com": *ai_us_dns
+    "register.appattest.apple.com": *ai_us_dns
+    "+.bing.com": *ai_us_dns
+    "+.bing.net": *ai_us_dns
+    "+.bingapis.com": *ai_us_dns
+    "ipinfo.io": *ai_us_dns
+
+sniffer:
+  enable: true
+  force-dns-mapping: true
+  parse-pure-ip: true
+  # 使用识别到的域名作为目标，减少客户端缓存旧 IP 对连接的影响。
+  override-destination: true
+  sniff:
+    HTTP:
+      ports: [80, 8080]
+    TLS:
+      ports: [443, 8443]
+    QUIC:
+      ports: [443, 8443]
 
 proxies:
-  - name: "SS-95.40.114.136"
+  - name: rbcmdrsc
+    type: hysteria2
+    server: 8.218.129.197
+    port: 51560
+    password: "5b3b73c3-130b-4265-b260-de2cdf839b2d"
+    sni: www.bing.com
+    alpn:
+      - h3
+    obfs: salamander
+    obfs-password: "rtyK3MMydq4sstNSFm3oH8yVZyAtWzWb"
+    skip-cert-verify: true
+    udp: true
+
+  - name: SG-Node
     type: ss
-    server: 95.40.114.136
+    server: 161.117.255.242
     port: 80
     cipher: aes-256-gcm
-    password: "f9RtK5hlFU"
-    udp: false
-    ip-version: dual
+    password: "1"
+    plugin: obfs
+    plugin-opts:
+      mode: http
+      host: cloudfront.com
+    udp: true
+
+  - name: HK-Douyin
+    type: ss
+    server: 8.218.129.197
+    port: 80
+    cipher: aes-256-gcm
+    password: "11"
+    plugin: obfs
+    plugin-opts:
+      mode: http
+      host: douyincdn.com
+    udp: true
+    udp-over-tcp: false
+    tfo: true
 
 proxy-groups:
-  - name: "节点选择"
+  # 每组固定一个节点，便于在连接页面核对实际线路。
+  - name: AI-US
     type: select
     proxies:
-      - "SS-95.40.114.136"
-      - DIRECT
+      - rbcmdrsc
+  - name: HK-Proxy
+    type: select
+    proxies:
+      - HK-Douyin
+  - name: Douyin-IP
+    type: select
+    proxies:
+      - HK-Douyin
+
+rule-providers:
+  # 沿用用户原有文件，其内容未提供，不擅自更改。
+  adblock:
+    type: file
+    behavior: classical
+    path: ./rule_provider/1.yaml
 
 rules:
-  - MATCH,节点选择
+  # Microsoft / Store / Windows Update -> 美国线路（2026-10-16）
+  - GEOSITE,microsoft,AI-US
+  - DOMAIN-SUFFIX,microsoft.com,AI-US
+  - DOMAIN-SUFFIX,microsoftonline.com,AI-US
+  - DOMAIN-SUFFIX,microsoftonline-p.com,AI-US
+  - DOMAIN-SUFFIX,microsoft.net,AI-US
+  - DOMAIN-SUFFIX,msftauth.net,AI-US
+  - DOMAIN-SUFFIX,msauth.net,AI-US
+  - DOMAIN-SUFFIX,msftauthimages.net,AI-US
+  - DOMAIN-SUFFIX,msauthimages.net,AI-US
+  - DOMAIN-SUFFIX,live.com,AI-US
+  - DOMAIN-SUFFIX,live.net,AI-US
+  - DOMAIN-SUFFIX,windows.com,AI-US
+  - DOMAIN-SUFFIX,windows.net,AI-US
+  - DOMAIN-SUFFIX,windowsupdate.com,AI-US
+  - DOMAIN-SUFFIX,update.microsoft.com,AI-US
+  - DOMAIN-SUFFIX,delivery.mp.microsoft.com,AI-US
+  - DOMAIN-SUFFIX,dl.delivery.mp.microsoft.com,AI-US
+  - DOMAIN-SUFFIX,office.com,AI-US
+  - DOMAIN-SUFFIX,office.net,AI-US
+  - DOMAIN-SUFFIX,office365.com,AI-US
+  - DOMAIN-SUFFIX,outlook.com,AI-US
+  - DOMAIN-SUFFIX,outlook.office.com,AI-US
+  - DOMAIN-SUFFIX,sfx.ms,AI-US
+  - DOMAIN-SUFFIX,gfx.ms,AI-US
+  - DOMAIN-SUFFIX,s-microsoft.com,AI-US
+  - DOMAIN-SUFFIX,azureedge.net,AI-US
+  - DOMAIN-SUFFIX,azurefd.net,AI-US
+  - DOMAIN-SUFFIX,aka.ms,AI-US
+
+  # 临时出口核对：ipinfo.io/json 固定走51650，api.ipify.org 固定走80。
+  # 仅用于分别验证两条节点的出口；确认完成后可删除这两条规则。
+  - DOMAIN,ipinfo.io,rbcmdrsc
+  - DOMAIN,api.ipify.org,HK-Douyin
+
+  # 局域网优先直连
+  - IP-CIDR,192.168.0.0/16,DIRECT,no-resolve
+  - IP-CIDR,10.0.0.0/8,DIRECT,no-resolve
+  - IP-CIDR,172.16.0.0/12,DIRECT,no-resolve
+  - IP-CIDR,127.0.0.0/8,DIRECT,no-resolve
+  - IP-CIDR,169.254.0.0/16,DIRECT,no-resolve
+  - IP-CIDR6,::1/128,DIRECT,no-resolve
+  - IP-CIDR6,fc00::/7,DIRECT,no-resolve
+  - IP-CIDR6,fe80::/10,DIRECT,no-resolve
+
+  # 补入后一个文件中缺少的 Apple Music 网页分流规则
+  - DOMAIN-SUFFIX,music.apple.com,AI-US
+
+  # OpenAI / ChatGPT / Codex / Sora；主域规则同时覆盖 ios、android、desktop、API 等子域
+  - DOMAIN-SUFFIX,openai.com,AI-US
+  - DOMAIN-SUFFIX,chatgpt.com,AI-US
+  - DOMAIN-SUFFIX,chat.com,AI-US
+  - DOMAIN-SUFFIX,oaistatic.com,AI-US
+  - DOMAIN-SUFFIX,oaiusercontent.com,AI-US
+  - DOMAIN-SUFFIX,oaistatsig.com,AI-US
+  - DOMAIN-SUFFIX,openaimerge.com,AI-US
+  - DOMAIN-SUFFIX,sora.com,AI-US
+  - DOMAIN-SUFFIX,openai.com.cdn.cloudflare.net,AI-US
+  - DOMAIN-SUFFIX,chatgpt.livekit.cloud,AI-US
+  - DOMAIN-SUFFIX,host.livekit.cloud,AI-US
+  - DOMAIN-SUFFIX,turn.livekit.cloud,AI-US
+
+  # OpenAI 已知资源和存储主机
+  - DOMAIN,openaiapi-site.azureedge.net,AI-US
+  - DOMAIN,openaiassets.blob.core.windows.net,AI-US
+  - DOMAIN,openaicom-api-bdcpf8c6d2e9atf6.z01.azurefd.net,AI-US
+  - DOMAIN,openaicom.imgix.net,AI-US
+  - DOMAIN,openaicomproductionae4b.blob.core.windows.net,AI-US
+  - DOMAIN,production-openaicom-storage.azureedge.net,AI-US
+  - DOMAIN,openai.qualtrics.com,AI-US
+
+  # OpenAI 动态资源存储主机；限定 OAI 前缀，不代理整个 Azure/AWS
+  - DOMAIN-REGEX,^oais(dmnt|dsor)pr[a-z0-9-]*\.blob\.core\.windows\.net$,AI-US
+  - DOMAIN-REGEX,^oaisdmntpr[a-z0-9-]*aws\.s3\.[a-z0-9-]+\.amazonaws\.com$,AI-US
+
+  # Claude 网页、手机、桌面、Claude Code 与附件
+  - DOMAIN-SUFFIX,anthropic.com,AI-US
+  - DOMAIN-SUFFIX,claude.ai,AI-US
+  - DOMAIN-SUFFIX,claude.com,AI-US
+  - DOMAIN-SUFFIX,clau.de,AI-US
+  - DOMAIN-SUFFIX,claudeusercontent.com,AI-US
+  - DOMAIN-SUFFIX,claudemcpcontent.com,AI-US
+  - DOMAIN-SUFFIX,claudemcpclient.com,AI-US
+
+  # Claude 静态站点
+  - DOMAIN,servd-anthropic-website.b-cdn.net,AI-US
+
+  # Gemini / AI Studio / NotebookLM / Google AI 客户端
+  - DOMAIN-SUFFIX,gemini.google.com,AI-US
+  - DOMAIN-SUFFIX,bard.google.com,AI-US
+  - DOMAIN-SUFFIX,aistudio.google.com,AI-US
+  - DOMAIN-SUFFIX,makersuite.google.com,AI-US
+  - DOMAIN-SUFFIX,notebooklm.google.com,AI-US
+  - DOMAIN-SUFFIX,notebook.google.com,AI-US
+  - DOMAIN-SUFFIX,labs.google.com,AI-US
+  - DOMAIN-SUFFIX,flow.google.com,AI-US
+  - DOMAIN-SUFFIX,jules.google.com,AI-US
+  - DOMAIN-SUFFIX,opal.google.com,AI-US
+  - DOMAIN-SUFFIX,colab.research.google.com,AI-US
+  - DOMAIN-SUFFIX,gemini.google,AI-US
+  - DOMAIN-SUFFIX,notebooklm.google,AI-US
+  - DOMAIN-SUFFIX,notebook.google,AI-US
+  - DOMAIN-SUFFIX,generativeai.google,AI-US
+  - DOMAIN-SUFFIX,deepmind.google,AI-US
+  - DOMAIN-SUFFIX,deepmind.com,AI-US
+  - DOMAIN-SUFFIX,labs.google,AI-US
+  - DOMAIN-SUFFIX,flow.google,AI-US
+  - DOMAIN-SUFFIX,jules.google,AI-US
+  - DOMAIN-SUFFIX,opal.google,AI-US
+  - DOMAIN-SUFFIX,antigravity.google,AI-US
+  - DOMAIN-SUFFIX,antigravity-unleash.goog,AI-US
+  - DOMAIN-SUFFIX,ai.studio,AI-US
+  - DOMAIN-SUFFIX,gemini.gstatic.com,AI-US
+  - DOMAIN-SUFFIX,stitch.withgoogle.com,AI-US
+  - DOMAIN-SUFFIX,generativelanguage.googleapis.com,AI-US
+  - DOMAIN-SUFFIX,robinfrontend-pa.googleapis.com,AI-US
+  - DOMAIN-SUFFIX,webchannel-robinfrontend-pa.googleapis.com,AI-US
+  - DOMAIN-SUFFIX,proactivebackend-pa.googleapis.com,AI-US
+  - DOMAIN-SUFFIX,notebooklm.googleapis.com,AI-US
+  - DOMAIN-SUFFIX,notebooklm-pa.googleapis.com,AI-US
+  - DOMAIN-SUFFIX,aisandbox-pa.googleapis.com,AI-US
+  - DOMAIN-SUFFIX,cloudaicompanion.googleapis.com,AI-US
+  - DOMAIN-SUFFIX,cloudcode-pa.googleapis.com,AI-US
+  - DOMAIN-SUFFIX,daily-cloudcode-pa.googleapis.com,AI-US
+  - DOMAIN-SUFFIX,antigravity.googleapis.com,AI-US
+  - DOMAIN-SUFFIX,antigravity-pa.googleapis.com,AI-US
+  - DOMAIN-SUFFIX,aida.googleapis.com,AI-US
+  - DOMAIN-SUFFIX,aicode.googleapis.com,AI-US
+  - DOMAIN-SUFFIX,geller-pa.googleapis.com,AI-US
+
+  # Gemini 手机与 AI Studio 补充接口；webchannel- 前缀不是原主机的子域
+  - DOMAIN,ai.google.dev,AI-US
+  - DOMAIN,alkalicore-pa.clients6.google.com,AI-US
+  - DOMAIN,alkalimakersuite-pa.clients6.google.com,AI-US
+  - DOMAIN,webchannel-alkalimakersuite-pa.clients6.google.com,AI-US
+  - DOMAIN,webchannel-alkalimakersuite-pa.googleapis.com,AI-US
+  - DOMAIN,waa-pa.clients6.google.com,AI-US
+  - DOMAIN,waa-pa.googleapis.com,AI-US
+
+  # GitHub Copilot / Cursor / Windsurf
+  - DOMAIN-SUFFIX,githubcopilot.com,AI-US
+  - DOMAIN-SUFFIX,cursor.com,AI-US
+  - DOMAIN-SUFFIX,cursor.sh,AI-US
+  - DOMAIN-SUFFIX,cursorapi.com,AI-US
+  - DOMAIN-SUFFIX,cursor-cdn.com,AI-US
+  - DOMAIN-SUFFIX,cursorvm.com,AI-US
+  - DOMAIN-SUFFIX,codeium.com,AI-US
+  - DOMAIN-SUFFIX,codeiumdata.com,AI-US
+  - DOMAIN-SUFFIX,windsurf.com,AI-US
+  - DOMAIN-SUFFIX,windsurf.build,AI-US
+
+  # 编程 AI 的已知独立主机
+  - DOMAIN,copilot-proxy.githubusercontent.com,AI-US
+  - DOMAIN,copilot-telemetry.githubusercontent.com,AI-US
+  - DOMAIN,copilot-telemetry-service.githubusercontent.com,AI-US
+  - DOMAIN,origin-tracker.githubusercontent.com,AI-US
+  - DOMAIN,copilot-workspace.githubnext.com,AI-US
+  - DOMAIN,copilotprodattachments.blob.core.windows.net,AI-US
+  - DOMAIN,default.exp-tas.com,AI-US
+  - DOMAIN,copilot-reports.github.com,AI-US
+  - DOMAIN,anysphere-binaries.s3.us-east-1.amazonaws.com,AI-US
+
+  # GitHub Copilot 动态报表/语音存储主机
+  - DOMAIN-REGEX,^copilot-reports-[a-z0-9-]+\.b01\.azurefd\.net$,AI-US
+  - DOMAIN-REGEX,^usagereports[a-z0-9-]*\.blob\.core\.windows\.net$,AI-US
+  - DOMAIN-REGEX,^amlwlrt4[a-z0-9-]*\.blob\.core\.windows\.net$,AI-US
+
+  # Microsoft Copilot / Azure AI
+  - DOMAIN-SUFFIX,copilot.microsoft.com,AI-US
+  - DOMAIN-SUFFIX,copilot.cloud.microsoft,AI-US
+  - DOMAIN-SUFFIX,copilot.com,AI-US
+  - DOMAIN-SUFFIX,copilot.ai,AI-US
+  - DOMAIN-SUFFIX,copilot-stg.com,AI-US
+  - DOMAIN-SUFFIX,openai.azure.com,AI-US
+  - DOMAIN-SUFFIX,services.ai.azure.com,AI-US
+  - DOMAIN-SUFFIX,inference.ai.azure.com,AI-US
+  - DOMAIN-SUFFIX,cognitiveservices.azure.com,AI-US
+  - DOMAIN-SUFFIX,api.azureml.ms,AI-US
+
+  # Azure AI 入口
+  - DOMAIN,ai.azure.com,AI-US
+
+  # Grok / Perplexity / Poe
+  - DOMAIN-SUFFIX,grok.com,AI-US
+  - DOMAIN-SUFFIX,grokusercontent.com,AI-US
+  - DOMAIN-SUFFIX,grokipedia.com,AI-US
+  - DOMAIN-SUFFIX,x.ai,AI-US
+  - DOMAIN-SUFFIX,grok.x.com,AI-US
+  - DOMAIN-SUFFIX,perplexity.ai,AI-US
+  - DOMAIN-SUFFIX,perplexity.com,AI-US
+  - DOMAIN-SUFFIX,pplx.ai,AI-US
+  - DOMAIN-SUFFIX,poe.com,AI-US
+  - DOMAIN-SUFFIX,poecdn.net,AI-US
+
+  # Grok 登录及 Perplexity 资源
+  - DOMAIN,accounts.spacex.ai,AI-US
+  - DOMAIN,ppl-ai-file-upload.s3.amazonaws.com,AI-US
+  - DOMAIN,pplx-res.cloudinary.com,AI-US
+
+  # 绘图 / 视频 / 音频 AI
+  - DOMAIN-SUFFIX,midjourney.com,AI-US
+  - DOMAIN-SUFFIX,runwayml.com,AI-US
+  - DOMAIN-SUFFIX,runwayml.cloud,AI-US
+  - DOMAIN-SUFFIX,runway.com,AI-US
+  - DOMAIN-SUFFIX,suno.com,AI-US
+  - DOMAIN-SUFFIX,suno.ai,AI-US
+  - DOMAIN-SUFFIX,udio.com,AI-US
+  - DOMAIN-SUFFIX,elevenlabs.io,AI-US
+  - DOMAIN-SUFFIX,elevenlabs.com,AI-US
+  - DOMAIN-SUFFIX,leonardo.ai,AI-US
+  - DOMAIN-SUFFIX,ideogram.ai,AI-US
+  - DOMAIN-SUFFIX,pika.art,AI-US
+  - DOMAIN-SUFFIX,lumalabs.ai,AI-US
+  - DOMAIN-SUFFIX,luma.ai,AI-US
+  - DOMAIN-SUFFIX,stability.ai,AI-US
+  - DOMAIN-SUFFIX,dreamstudio.ai,AI-US
+  - DOMAIN-SUFFIX,clipdrop.co,AI-US
+  - DOMAIN-SUFFIX,replicate.com,AI-US
+  - DOMAIN-SUFFIX,replicate.delivery,AI-US
+  - DOMAIN-SUFFIX,fal.ai,AI-US
+  - DOMAIN-SUFFIX,fal.run,AI-US
+  - DOMAIN-SUFFIX,fal.media,AI-US
+  - DOMAIN-SUFFIX,heygen.com,AI-US
+  - DOMAIN-SUFFIX,synthesia.io,AI-US
+
+  # Runway 官方列出的上传与资源主机
+  - DOMAIN,runway-datasets.s3.amazonaws.com,AI-US
+  - DOMAIN,runway-datasets.s3.us-east-1.amazonaws.com,AI-US
+  - DOMAIN,runway-uploads-prod.s3.amazonaws.com,AI-US
+  - DOMAIN,runway-uploads-prod.s3.us-east-1.amazonaws.com,AI-US
+  - DOMAIN,dnf8butk8bbsy.cloudfront.net,AI-US
+  - DOMAIN,d1y6zccyuj4x6c.cloudfront.net,AI-US
+  - DOMAIN,d1zxmob2olb5kh.cloudfront.net,AI-US
+  - DOMAIN,dnznrvs05pmza.cloudfront.net,AI-US
+  - DOMAIN,d2jqrm6oza8nb6.cloudfront.net,AI-US
+
+  # 更多 AI 网页 / 聚合 API / 编程与研究工具
+  - DOMAIN-SUFFIX,character.ai,AI-US
+  - DOMAIN-SUFFIX,characterai.io,AI-US
+  - DOMAIN-SUFFIX,c.ai,AI-US
+  - DOMAIN-SUFFIX,replika.ai,AI-US
+  - DOMAIN-SUFFIX,replika.com,AI-US
+  - DOMAIN-SUFFIX,pi.ai,AI-US
+  - DOMAIN-SUFFIX,inflection.ai,AI-US
+  - DOMAIN-SUFFIX,you.com,AI-US
+  - DOMAIN-SUFFIX,phind.com,AI-US
+  - DOMAIN-SUFFIX,t3.chat,AI-US
+  - DOMAIN-SUFFIX,mistral.ai,AI-US
+  - DOMAIN-SUFFIX,cohere.ai,AI-US
+  - DOMAIN-SUFFIX,cohere.com,AI-US
+  - DOMAIN-SUFFIX,huggingface.co,AI-US
+  - DOMAIN-SUFFIX,huggingface.com,AI-US
+  - DOMAIN-SUFFIX,hf.co,AI-US
+  - DOMAIN-SUFFIX,hf.space,AI-US
+  - DOMAIN-SUFFIX,openrouter.ai,AI-US
+  - DOMAIN-SUFFIX,groq.com,AI-US
+  - DOMAIN-SUFFIX,cerebras.ai,AI-US
+  - DOMAIN-SUFFIX,together.ai,AI-US
+  - DOMAIN-SUFFIX,together.xyz,AI-US
+  - DOMAIN-SUFFIX,fireworks.ai,AI-US
+  - DOMAIN-SUFFIX,deepinfra.com,AI-US
+  - DOMAIN-SUFFIX,ai21.com,AI-US
+  - DOMAIN-SUFFIX,h2o.ai,AI-US
+  - DOMAIN-SUFFIX,lovable.dev,AI-US
+  - DOMAIN-SUFFIX,lovable.app,AI-US
+  - DOMAIN-SUFFIX,bolt.new,AI-US
+  - DOMAIN-SUFFIX,bolt.diy,AI-US
+  - DOMAIN-SUFFIX,v0.dev,AI-US
+  - DOMAIN-SUFFIX,v0.app,AI-US
+  - DOMAIN-SUFFIX,replit.com,AI-US
+  - DOMAIN-SUFFIX,replit.dev,AI-US
+  - DOMAIN-SUFFIX,sourcegraph.com,AI-US
+  - DOMAIN-SUFFIX,tabnine.com,AI-US
+  - DOMAIN-SUFFIX,codegeex.com,AI-US
+  - DOMAIN-SUFFIX,gamma.app,AI-US
+  - DOMAIN-SUFFIX,tome.app,AI-US
+  - DOMAIN-SUFFIX,beautiful.ai,AI-US
+  - DOMAIN-SUFFIX,felo.ai,AI-US
+  - DOMAIN-SUFFIX,genspark.ai,AI-US
+  - DOMAIN-SUFFIX,consensus.app,AI-US
+  - DOMAIN-SUFFIX,elicit.com,AI-US
+  - DOMAIN-SUFFIX,elicit.org,AI-US
+  - DOMAIN-SUFFIX,scite.ai,AI-US
+
+  # 维护者分类补充快照；包括海外版 AI 服务、模型工具与内容平台
+  - DOMAIN,cloudaicompanion.googleapis.com,AI-US
+  - DOMAIN,cloudcode-pa.googleapis.com,AI-US
+  - DOMAIN,daily-cloudcode-pa.googleapis.com,AI-US
+  - DOMAIN,notebooklm-pa.googleapis.com,AI-US
+  - DOMAIN,notebooklm.googleapis.com,AI-US
+  - DOMAIN,antigravity-pa.googleapis.com,AI-US
+  - DOMAIN,antigravity.googleapis.com,AI-US
+  - DOMAIN-SUFFIX,tripo3d.ai,AI-US
+  - DOMAIN-SUFFIX,deepwiki.com,AI-US
+  - DOMAIN-SUFFIX,deepwiki.org,AI-US
+  - DOMAIN-SUFFIX,jasper.ai,AI-US
+  - DOMAIN-SUFFIX,kimi.ai,AI-US
+  - DOMAIN-SUFFIX,moonshot.ai,AI-US
+  - DOMAIN-SUFFIX,agentclientprotocol.com,AI-US
+  - DOMAIN-SUFFIX,anythingllm.com,AI-US
+  - DOMAIN-SUFFIX,arena.ai,AI-US
+  - DOMAIN-SUFFIX,chutes.ai,AI-US
+  - DOMAIN-SUFFIX,clawhub.ai,AI-US
+  - DOMAIN-SUFFIX,crewai.com,AI-US
+  - DOMAIN-SUFFIX,devin.ai,AI-US
+  - DOMAIN-SUFFIX,diabrowser.com,AI-US
+  - DOMAIN-SUFFIX,diabrowser.engineering,AI-US
+  - DOMAIN-SUFFIX,dify.ai,AI-US
+  - DOMAIN-SUFFIX,dreamgen.com,AI-US
+  - DOMAIN-SUFFIX,duck.ai,AI-US
+  - DOMAIN-SUFFIX,kiro.dev,AI-US
+  - DOMAIN-SUFFIX,langchain.com,AI-US
+  - DOMAIN-SUFFIX,lmstudio.ai,AI-US
+  - DOMAIN-SUFFIX,lovart.ai,AI-US
+  - DOMAIN-SUFFIX,meta.ai,AI-US
+  - DOMAIN-SUFFIX,minimax.io,AI-US
+  - DOMAIN-SUFFIX,mozilla.ai,AI-US
+  - DOMAIN-SUFFIX,notegpt.io,AI-US
+  - DOMAIN-SUFFIX,novelai.net,AI-US
+  - DOMAIN-SUFFIX,ollama.com,AI-US
+  - DOMAIN-SUFFIX,openart.ai,AI-US
+  - DOMAIN-SUFFIX,openclaw.ai,AI-US
+  - DOMAIN-SUFFIX,openspec.dev,AI-US
+  - DOMAIN-SUFFIX,plannotator.ai,AI-US
+  - DOMAIN-SUFFIX,qoder.com,AI-US
+  - DOMAIN-SUFFIX,sider.ai,AI-US
+  - DOMAIN-SUFFIX,spicywriter.com,AI-US
+  - DOMAIN-SUFFIX,talkai.info,AI-US
+  - DOMAIN-SUFFIX,tapnow.ai,AI-US
+  - DOMAIN-SUFFIX,manus.im,AI-US
+  - DOMAIN-SUFFIX,liveperson.net,AI-US
+  - DOMAIN-SUFFIX,lpsnmedia.net,AI-US
+  - DOMAIN-SUFFIX,comfy.org,AI-US
+  - DOMAIN-SUFFIX,comfyci.org,AI-US
+  - DOMAIN-SUFFIX,comfyregistry.org,AI-US
+  - DOMAIN-SUFFIX,oystermercury.top,AI-US
+  - DOMAIN-SUFFIX,grazie.ai,AI-US
+  - DOMAIN-SUFFIX,jetbrains.ai,AI-US
+  - DOMAIN-SUFFIX,coderabbit.ai,AI-US
+  - DOMAIN-SUFFIX,manuscdn.com,AI-US
+  - DOMAIN-SUFFIX,youmind.site,AI-US
+  - DOMAIN-SUFFIX,youmind.com,AI-US
+  - DOMAIN-SUFFIX,youmind.ai,AI-US
+  - DOMAIN-SUFFIX,crixet.com,AI-US
+  - DOMAIN-SUFFIX,chatgpt.site,AI-US
+  - DOMAIN-SUFFIX,grazie.aws.intellij.net,AI-US
+  - DOMAIN-SUFFIX,coderabbit.gallery.vsassets.io,AI-US
+  - DOMAIN-SUFFIX,gateway.ai.cloudflare.com,AI-US
+  - DOMAIN-SUFFIX,coze.com,AI-US
+  - DOMAIN-SUFFIX,marscode.com,AI-US
+  - DOMAIN-SUFFIX,trae.ai,AI-US
+  - DOMAIN-SUFFIX,cici.com,AI-US
+  - DOMAIN-SUFFIX,ciciai.com,AI-US
+  - DOMAIN-SUFFIX,ciciaicdn.com,AI-US
+  - DOMAIN-SUFFIX,dola.com,AI-US
+  - DOMAIN,browser-intake-datadoghq.com,AI-US
+  - DOMAIN,o33249.ingest.sentry.io,AI-US
+
+  # 共用登录/验证/功能开关服务；其他网站使用这些相同主机也会走美国
+  - DOMAIN-SUFFIX,ct.sendgrid.net,AI-US
+  - DOMAIN-SUFFIX,intercom.io,AI-US
+  - DOMAIN-SUFFIX,intercomcdn.com,AI-US
+  # 用户补充清单：覆盖根域名及全部子域，包含原 api / events 子域。
+  - DOMAIN-SUFFIX,statsig.com,AI-US
+  - DOMAIN-SUFFIX,statsigapi.net,AI-US
+  - DOMAIN-SUFFIX,featureassets.org,AI-US
+  - DOMAIN-SUFFIX,prodregistryv2.org,AI-US
+  - DOMAIN-SUFFIX,featuregates.org,AI-US
+  - DOMAIN-SUFFIX,client-api.arkoselabs.com,AI-US
+
+  # OpenAI 官方允许列表及已知 AI 验证依赖
+  - DOMAIN,cdn.workos.com,AI-US
+  - DOMAIN,forwarder.workos.com,AI-US
+  - DOMAIN,setup.workos.com,AI-US
+  - DOMAIN,images.workoscdn.com,AI-US
+  - DOMAIN,workos.imgix.net,AI-US
+  - DOMAIN,challenges.cloudflare.com,AI-US
+  - DOMAIN,humb.apple.com,AI-US
+  - DOMAIN,js.stripe.com,AI-US
+  - DOMAIN,o207216.ingest.sentry.io,AI-US
+  - DOMAIN,rum.browser-intake-datadoghq.com,AI-US
+  - DOMAIN,openai-api.arkoselabs.com,AI-US
+  - DOMAIN,static.cloudflareinsights.com,AI-US
+  - DOMAIN,cdn.usefathom.com,AI-US
+  - DOMAIN,http-intake.logs.us5.datadoghq.com,AI-US
+
+  # 共用 Google 登录/资源主机；这些主机的其他业务同走美国
+  - DOMAIN,accounts.google.com,AI-US
+  - DOMAIN,accounts.google.com.hk,AI-US
+  - DOMAIN,oauth2.googleapis.com,AI-US
+  - DOMAIN,identitytoolkit.googleapis.com,AI-US
+  - DOMAIN,securetoken.googleapis.com,AI-US
+  - DOMAIN,content-autofill.googleapis.com,AI-US
+  - DOMAIN,play.googleapis.com,AI-US
+  - DOMAIN,apis.google.com,AI-US
+  - DOMAIN,ogs.google.com,AI-US
+  - DOMAIN,www.gstatic.com,AI-US
+  - DOMAIN,ssl.gstatic.com,AI-US
+  - DOMAIN,fonts.gstatic.com,AI-US
+  - DOMAIN,fonts.googleapis.com,AI-US
+  - DOMAIN,lh3.googleusercontent.com,AI-US
+  - DOMAIN,lh4.googleusercontent.com,AI-US
+  - DOMAIN,lh5.googleusercontent.com,AI-US
+  - DOMAIN,lh6.googleusercontent.com,AI-US
+  - DOMAIN,storage.googleapis.com,AI-US
+
+  # 共用 GitHub/Microsoft/Apple 登录主机；域名分流不能区分同主机下的登录与其他页面
+  - DOMAIN,github.com,AI-US
+  - DOMAIN,api.github.com,AI-US
+  - DOMAIN,github.githubassets.com,AI-US
+  - DOMAIN,avatars.githubusercontent.com,AI-US
+  - DOMAIN,login.live.com,AI-US
+  - DOMAIN,account.live.com,AI-US
+  - DOMAIN,login.microsoftonline.com,AI-US
+  - DOMAIN,account.microsoft.com,AI-US
+  - DOMAIN,login.microsoft.com,AI-US
+  - DOMAIN,aadcdn.msftauth.net,AI-US
+  - DOMAIN,aadcdn.msauth.net,AI-US
+  - DOMAIN,appleid.apple.com,AI-US
+  - DOMAIN,appleid.cdn-apple.com,AI-US
+  - DOMAIN,register.appattest.apple.com,AI-US
+
+  # Bing 内嵌 Copilot 与其资源；Bing 普通搜索也会走美国
+  - DOMAIN-SUFFIX,bing.com,AI-US
+  - DOMAIN-SUFFIX,bing.net,AI-US
+  - DOMAIN-SUFFIX,bingapis.com,AI-US
+
+  # ChatGPT 语音的官方专用 IPv4 地址快照；来源 https://openai.com/chatgpt-voice.json
+  - IP-CIDR,102.37.57.54/32,AI-US,no-resolve
+  - IP-CIDR,13.71.25.29/32,AI-US,no-resolve
+  - IP-CIDR,135.220.40.201/32,AI-US,no-resolve
+  - IP-CIDR,172.203.39.49/32,AI-US,no-resolve
+  - IP-CIDR,172.207.173.200/32,AI-US,no-resolve
+  - IP-CIDR,172.214.226.198/32,AI-US,no-resolve
+  - IP-CIDR,191.233.251.27/32,AI-US,no-resolve
+  - IP-CIDR,20.162.96.163/32,AI-US,no-resolve
+  - IP-CIDR,20.168.48.117/32,AI-US,no-resolve
+  - IP-CIDR,20.184.36.134/32,AI-US,no-resolve
+  - IP-CIDR,20.203.144.245/32,AI-US,no-resolve
+  - IP-CIDR,20.74.221.21/32,AI-US,no-resolve
+  - IP-CIDR,4.151.200.38/32,AI-US,no-resolve
+  - IP-CIDR,4.155.146.196/32,AI-US,no-resolve
+  - IP-CIDR,4.197.172.116/32,AI-US,no-resolve
+  - IP-CIDR,4.217.235.100/32,AI-US,no-resolve
+  - IP-CIDR,4.245.198.13/32,AI-US,no-resolve
+  - IP-CIDR,40.118.236.137/32,AI-US,no-resolve
+  - IP-CIDR,51.4.112.173/32,AI-US,no-resolve
+  - IP-CIDR,52.143.181.161/32,AI-US,no-resolve
+  - IP-CIDR,68.155.152.41/32,AI-US,no-resolve
+  - IP-CIDR,72.146.20.246/32,AI-US,no-resolve
+  - IP-CIDR,74.248.148.7/32,AI-US,no-resolve
+
+  # 原有抖音媒体资源直连
+  - DOMAIN-SUFFIX,douyincdn.com,DIRECT
+  - DOMAIN-SUFFIX,douyinliving.com,DIRECT
+  - DOMAIN-SUFFIX,douyinvod.com,DIRECT
+  - DOMAIN-SUFFIX,douyinpic.com,DIRECT
+  - DOMAIN-SUFFIX,bytegecko.com,DIRECT
+  - DOMAIN-SUFFIX,byteeffecttos.com,DIRECT
+  - DOMAIN-SUFFIX,byteimg.com,DIRECT
+  - DOMAIN-SUFFIX,ecombdimg.com,DIRECT
+  - DOMAIN-SUFFIX,bytehwm.com,DIRECT
+  - DOMAIN-SUFFIX,bytecdn.com,DIRECT
+  - DOMAIN-SUFFIX,zjcdn.com,DIRECT
+  - DOMAIN-KEYWORD,awememusicpgc,DIRECT
+  - DOMAIN-KEYWORD,api-play,DIRECT
+
+  # 原有抖音属地检测/API：香港80
+  - DOMAIN-SUFFIX,snssdk.com,Douyin-IP
+  - DOMAIN-SUFFIX,amemv.com,Douyin-IP
+
+  # 国内域名优先直连：即使 CDN 位于国外，仍按国内站点直连。
+  # AI 与抖音专用规则位于上方，继续按原定线路处理。
+  - DOMAIN-SUFFIX,cn,DIRECT
+  - GEOSITE,CN,DIRECT
+
+  # 国内 IP 直连，避免本地规则集将国内下载 CDN 送往香港。
+  - GEOIP,CN,DIRECT
+
+  # 沿用原规则集；仅在以上 AI、抖音及国内域名/IP 规则未命中时适用。
+  - RULE-SET,adblock,HK-Proxy
+
+  # 剩余国外流量（含普通 AWS/Lightsail）走香港80。
+  - MATCH,HK-Proxy
