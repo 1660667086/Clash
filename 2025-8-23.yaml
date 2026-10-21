@@ -12,74 +12,7 @@
 # 此文件无法强制路由器接管设备自带的 VPN / 私密中继 / 加密 DNS。
 # 资料：MetaCubeX/meta-rules-dat category-ai-!cn（下载后内嵌快照）
 # https://help.openai.com/en/articles/9247338-network-recommendations-for-chatgpt-errors-on-web-and-apps
-# https://code.claude.com/docs/en/network-config
-# https://docs.github.com/en/copilot/reference/copilot-allowlist-reference
-# https://cursor.com/docs/enterprise/network-configuration
-# https://wiki.metacubex.one/en/config/sniff/
-# https://wiki.metacubex.one/en/config/dns/
 
-port: 7890
-socks-port: 7891
-redir-port: 7892
-allow-lan: true
-mode: rule
-log-level: info
-external-controller: 0.0.0.0:9090
-
-dns:
-  enable: true
-  # OpenClash 默认 DNS 监听端口；插件设置可覆盖此项。
-  listen: 0.0.0.0:7874
-  ipv6: false
-  enhanced-mode: fake-ip
-  fake-ip-range: 198.18.0.1/16
-  prefer-h3: false
-  default-nameserver:
-    - 223.5.5.5
-    - 119.29.29.29
-  # 节点自身解析独立，避免代理 DNS 的循环依赖。
-  proxy-server-nameserver:
-    - 223.5.5.5
-    - 119.29.29.29
-  nameserver:
-    - 223.5.5.5
-    - 119.29.29.29
-  # 命中直连规则后，使用国内 DNS 获取直连地址，避免香港备用解析影响下载 CDN。
-  direct-nameserver:
-    - 223.5.5.5
-    - 119.29.29.29
-  direct-nameserver-follow-policy: false
-  # 普通国外域名的备用解析通过香港节点使用加密 DNS。
-  fallback:
-    - "https://1.1.1.1/dns-query#HK-Douyin"
-    - "https://8.8.8.8/dns-query#HK-Douyin"
-  # AI 域名若需由本机解析，固定通过 51650 查询，不使用香港备用 DNS。
-  # Fake-IP 模式下，能由节点远程解析的连接仍交给相应节点处理。
-  # YAML 锚点仅用于复用同一组 DNS 地址。
-  nameserver-policy:
-    "+.openai.com": &ai_us_dns
-      - "https://1.1.1.1/dns-query#rbcmdrsc"
-      - "https://8.8.8.8/dns-query#rbcmdrsc"
-    "geosite:microsoft": *ai_us_dns
-    "+.chatgpt.com": *ai_us_dns
-    "+.chat.com": *ai_us_dns
-    "+.oaistatic.com": *ai_us_dns
-    "+.oaiusercontent.com": *ai_us_dns
-    "+.oaistatsig.com": *ai_us_dns
-    "+.openaimerge.com": *ai_us_dns
-    "+.sora.com": *ai_us_dns
-    "+.openai.com.cdn.cloudflare.net": *ai_us_dns
-    "+.chatgpt.livekit.cloud": *ai_us_dns
-    "+.host.livekit.cloud": *ai_us_dns
-    "+.turn.livekit.cloud": *ai_us_dns
-    "openaiapi-site.azureedge.net": *ai_us_dns
-    "openaiassets.blob.core.windows.net": *ai_us_dns
-    "openaicom-api-bdcpf8c6d2e9atf6.z01.azurefd.net": *ai_us_dns
-    "openaicom.imgix.net": *ai_us_dns
-    "openaicomproductionae4b.blob.core.windows.net": *ai_us_dns
-    "production-openaicom-storage.azureedge.net": *ai_us_dns
-    "openai.qualtrics.com": *ai_us_dns
-    "+.anthropic.com": *ai_us_dns
     "+.claude.ai": *ai_us_dns
     "+.claude.com": *ai_us_dns
     "+.clau.de": *ai_us_dns
