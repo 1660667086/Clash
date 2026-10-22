@@ -12,9 +12,116 @@
 # 此文件无法强制路由器接管设备自带的 VPN / 私密中继 / 加密 DNS。
 # 资料：MetaCubeX/meta-rules-dat category-ai-!cn（下载后内嵌快照）
 # https://help.openai.com/en/articles/9247338-network-recommendations-for-chatgpt-errors-on-web-and-apps
+# https://code.claude.com/docs/en/network-config
+# https://docs.github.com/en/copilot/reference/copilot-allowlist-reference
+# https://cursor.com/docs/enterprise/network-configuration
+# https://wiki.metacubex.one/en/config/sniff/
+# https://wiki.metacubex.one/en/config/dns/
 
+port: 7890
+socks-port: 7891
+redir-port: 7892
+allow-lan: true
+mode: rule
+log-level: info
+external-controller: 0.0.0.0:9090
+
+dns:
+  enable: true
+  # OpenClash 默认 DNS 监听端口；插件设置可覆盖此项。
+  listen: 0.0.0.0:7874
+  ipv6: false
+  enhanced-mode: redir-host
+  fake-ip-range: 198.18.0.1/16
+  prefer-h3: false
+  default-nameserver:
+    - 223.5.5.5
+    - 119.29.29.29
+  # 节点自身解析独立，避免代理 DNS 的循环依赖。
+  proxy-server-nameserver:
+    - 223.5.5.5
+    - 119.29.29.29
+  nameserver:
+    - 223.5.5.5
+    - 119.29.29.29
+  # 命中直连规则后，使用国内 DNS 获取直连地址，避免香港备用解析影响下载 CDN。
+  direct-nameserver:
+    - 223.5.5.5
+    - 119.29.29.29
+  direct-nameserver-follow-policy: false
+  # 普通国外域名的备用解析通过香港节点使用加密 DNS。
+  fallback:
+    - "https://1.1.1.1/dns-query#HK-Douyin"
+    - "https://8.8.8.8/dns-query#HK-Douyin"
+  # AI 域名若需由本机解析，固定通过 51650 查询，不使用香港备用 DNS。
+  # Fake-IP 模式下，能由节点远程解析的连接仍交给相应节点处理。
+  # YAML 锚点仅用于复用同一组 DNS 地址。
+  nameserver-policy:
+    "+.openai.com": &ai_us_dns
+      - "https://1.1.1.1/dns-query#rbcmdrsc"
+      - "https://8.8.8.8/dns-query#rbcmdrsc"
+    # 新增：沿用现有美国 DNS，覆盖 Chrome Gemini 资格检测和 TikTok
+    "geminiweb-pa.googleapis.com": *ai_us_dns
+    "clientservices.googleapis.com": *ai_us_dns
+    "+.bytedapm.com": *ai_us_dns
+    "+.muscdn.com": *ai_us_dns
+    "+.musical.ly": *ai_us_dns
+    "+.tik-tokapi.com": *ai_us_dns
+    "+.tiktok-minis.com": *ai_us_dns
+    "+.tiktok-row.net": *ai_us_dns
+    "+.tiktok.com": *ai_us_dns
+    "+.tiktokcdn-eu.com": *ai_us_dns
+    "+.tiktokcdn-us.com": *ai_us_dns
+    "+.tiktokcdn.com": *ai_us_dns
+    "+.tiktokd.net": *ai_us_dns
+    "+.tiktokd.org": *ai_us_dns
+    "+.tiktokeu-cdn.com": *ai_us_dns
+    "+.tiktokglobalshopv.com": *ai_us_dns
+    "+.tiktokminis.us": *ai_us_dns
+    "+.tiktokrow-cdn.com": *ai_us_dns
+    "+.tiktokv.com": *ai_us_dns
+    "+.tiktokv.eu": *ai_us_dns
+    "+.tiktokv.us": *ai_us_dns
+    "+.tiktokw.eu": *ai_us_dns
+    "+.tiktokw.us": *ai_us_dns
+    "+.ttcdn-us.com": *ai_us_dns
+    "+.ttlivecdn.com": *ai_us_dns
+    "+.ttoverseaus.net": *ai_us_dns
+    "+.ttwstatic.com": *ai_us_dns
+    "+.tiktokcdn-us.com.edgesuite.net": *ai_us_dns
+    "+.tiktokcdn.com.akamaized.net": *ai_us_dns
+    "+.tiktokcdn.com.edgesuite.net": *ai_us_dns
+    "+.tiktokv.com.edgekey.net": *ai_us_dns
+    "+.tiktokv.com.edgesuite.net": *ai_us_dns
+    "p16-tiktokcdn-com.akamaized.net": *ai_us_dns
+    "p16-tiktok-dm-sticker-sign-sg.ibyteimg.com": *ai_us_dns
+    "roovza-launches.appsflyersdk.com": *ai_us_dns
+    "roovza.inapps.appsflyersdk.com": *ai_us_dns
+    "roovza.launches.appsflyersdk.com": *ai_us_dns
+    "roovza.skadsdk.appsflyersdk.com": *ai_us_dns
+    "geosite:microsoft": *ai_us_dns
+    "+.chatgpt.com": *ai_us_dns
+    "+.chat.com": *ai_us_dns
+    "+.oaistatic.com": *ai_us_dns
+    "+.oaiusercontent.com": *ai_us_dns
+    "+.oaistatsig.com": *ai_us_dns
+    "+.openaimerge.com": *ai_us_dns
+    "+.sora.com": *ai_us_dns
+    "+.openai.com.cdn.cloudflare.net": *ai_us_dns
+    "+.chatgpt.livekit.cloud": *ai_us_dns
+    "+.host.livekit.cloud": *ai_us_dns
+    "+.turn.livekit.cloud": *ai_us_dns
+    "openaiapi-site.azureedge.net": *ai_us_dns
+    "openaiassets.blob.core.windows.net": *ai_us_dns
+    "openaicom-api-bdcpf8c6d2e9atf6.z01.azurefd.net": *ai_us_dns
+    "openaicom.imgix.net": *ai_us_dns
+    "openaicomproductionae4b.blob.core.windows.net": *ai_us_dns
+    "production-openaicom-storage.azureedge.net": *ai_us_dns
+    "openai.qualtrics.com": *ai_us_dns
+    "+.anthropic.com": *ai_us_dns
     "+.claude.ai": *ai_us_dns
     "+.claude.com": *ai_us_dns
+    "+.claude.app": *ai_us_dns
     "+.clau.de": *ai_us_dns
     "+.claudeusercontent.com": *ai_us_dns
     "+.claudemcpcontent.com": *ai_us_dns
@@ -321,6 +428,10 @@ sniffer:
   parse-pure-ip: true
   # 使用识别到的域名作为目标，减少客户端缓存旧 IP 对连接的影响。
   override-destination: true
+  # 新增：不嗅探代理节点的外层连接，避免 obfs 伪装 Host 改写节点目标
+  skip-dst-address:
+    - 8.218.129.197/32
+    - 161.117.255.242/32
   sniff:
     HTTP:
       ports: [80, 8080]
@@ -392,6 +503,52 @@ rule-providers:
     path: ./rule_provider/1.yaml
 
 rules:
+  # 新增：节点连接直连，减少路由器再次代理终端的节点连接
+  - IP-CIDR,8.218.129.197/32,DIRECT,no-resolve
+  - IP-CIDR,161.117.255.242/32,DIRECT,no-resolve
+
+  # 新增：TikTok 主站、接口和视频/CDN 固定使用现有美国线路
+  - DOMAIN,p16-tiktokcdn-com.akamaized.net,AI-US
+  - DOMAIN,p16-tiktok-dm-sticker-sign-sg.ibyteimg.com,AI-US
+  - DOMAIN,roovza-launches.appsflyersdk.com,AI-US
+  - DOMAIN,roovza.inapps.appsflyersdk.com,AI-US
+  - DOMAIN,roovza.launches.appsflyersdk.com,AI-US
+  - DOMAIN,roovza.skadsdk.appsflyersdk.com,AI-US
+  - DOMAIN-SUFFIX,bytedapm.com,AI-US
+  - DOMAIN-SUFFIX,muscdn.com,AI-US
+  - DOMAIN-SUFFIX,musical.ly,AI-US
+  - DOMAIN-SUFFIX,tik-tokapi.com,AI-US
+  - DOMAIN-SUFFIX,tiktok-minis.com,AI-US
+  - DOMAIN-SUFFIX,tiktok-row.net,AI-US
+  - DOMAIN-SUFFIX,tiktok.com,AI-US
+  - DOMAIN-SUFFIX,tiktokcdn-eu.com,AI-US
+  - DOMAIN-SUFFIX,tiktokcdn-us.com,AI-US
+  - DOMAIN-SUFFIX,tiktokcdn.com,AI-US
+  - DOMAIN-SUFFIX,tiktokd.net,AI-US
+  - DOMAIN-SUFFIX,tiktokd.org,AI-US
+  - DOMAIN-SUFFIX,tiktokeu-cdn.com,AI-US
+  - DOMAIN-SUFFIX,tiktokglobalshopv.com,AI-US
+  - DOMAIN-SUFFIX,tiktokminis.us,AI-US
+  - DOMAIN-SUFFIX,tiktokrow-cdn.com,AI-US
+  - DOMAIN-SUFFIX,tiktokv.com,AI-US
+  - DOMAIN-SUFFIX,tiktokv.eu,AI-US
+  - DOMAIN-SUFFIX,tiktokv.us,AI-US
+  - DOMAIN-SUFFIX,tiktokw.eu,AI-US
+  - DOMAIN-SUFFIX,tiktokw.us,AI-US
+  - DOMAIN-SUFFIX,ttcdn-us.com,AI-US
+  - DOMAIN-SUFFIX,ttlivecdn.com,AI-US
+  - DOMAIN-SUFFIX,ttoverseaus.net,AI-US
+  - DOMAIN-SUFFIX,ttwstatic.com,AI-US
+  - DOMAIN-SUFFIX,tiktokcdn-us.com.edgesuite.net,AI-US
+  - DOMAIN-SUFFIX,tiktokcdn.com.akamaized.net,AI-US
+  - DOMAIN-SUFFIX,tiktokcdn.com.edgesuite.net,AI-US
+  - DOMAIN-SUFFIX,tiktokv.com.edgekey.net,AI-US
+  - DOMAIN-SUFFIX,tiktokv.com.edgesuite.net,AI-US
+
+  # 新增：Chrome 内置 Gemini 的资格检测与 Gemini 网页保持同一美国出口
+  - DOMAIN,geminiweb-pa.googleapis.com,AI-US
+  - DOMAIN,clientservices.googleapis.com,AI-US
+
   # Microsoft / Store / Windows Update -> 美国线路（2026-10-16）
   - GEOSITE,microsoft,AI-US
   - DOMAIN-SUFFIX,microsoft.com,AI-US
@@ -437,8 +594,6 @@ rules:
   - IP-CIDR6,fc00::/7,DIRECT,no-resolve
   - IP-CIDR6,fe80::/10,DIRECT,no-resolve
 
-  # 补入后一个文件中缺少的 Apple Music 网页分流规则
-  - DOMAIN-SUFFIX,music.apple.com,AI-US
 
   # OpenAI / ChatGPT / Codex / Sora；主域规则同时覆盖 ios、android、desktop、API 等子域
   - DOMAIN-SUFFIX,openai.com,AI-US
@@ -471,6 +626,7 @@ rules:
   - DOMAIN-SUFFIX,anthropic.com,AI-US
   - DOMAIN-SUFFIX,claude.ai,AI-US
   - DOMAIN-SUFFIX,claude.com,AI-US
+  - DOMAIN-SUFFIX,claude.app,AI-US
   - DOMAIN-SUFFIX,clau.de,AI-US
   - DOMAIN-SUFFIX,claudeusercontent.com,AI-US
   - DOMAIN-SUFFIX,claudemcpcontent.com,AI-US
@@ -876,5 +1032,3 @@ rules:
 
   # 剩余国外流量（含普通 AWS/Lightsail）走香港80。
   - MATCH,HK-Proxy
-
-#url:https://cdn.jsdelivr.net/gh/1660667086/Clash@main/2025-8-23.yaml
