@@ -443,8 +443,8 @@ sniffer:
 proxies:
   - name: rbcmdrsc
     type: hysteria2
-    server: 8.218.129.197
-    port: 51560
+    server: 8.210.11.188
+    port: 47188
     password: "5b3b73c3-130b-4265-b260-de2cdf839b2d"
     sni: www.bing.com
     alpn:
@@ -468,7 +468,7 @@ proxies:
 
   - name: HK-Douyin
     type: ss
-    server: 8.218.129.197
+    server: 8.210.11.188
     port: 80
     cipher: aes-256-gcm
     password: "11"
@@ -503,6 +503,18 @@ rule-providers:
     path: ./rule_provider/1.yaml
 
 rules:
+  # 新增：Ookla Speedtest 网页、常见手机/电脑客户端及测速域名使用本地直连
+  # 国内测速服务器也由原有 GEOIP,CN,DIRECT 覆盖；不改其他业务规则
+  - PROCESS-NAME,Speedtest.exe,DIRECT
+  - PROCESS-NAME,speedtest.exe,DIRECT
+  - PROCESS-NAME,Speedtest,DIRECT
+  - PROCESS-NAME,speedtest,DIRECT
+  - PROCESS-NAME,org.zwanoo.android.speedtest,DIRECT
+  - DOMAIN-SUFFIX,ookla.com,DIRECT
+  - DOMAIN-SUFFIX,ooklaserver.net,DIRECT
+  - DOMAIN-SUFFIX,cdnst.net,DIRECT
+  - DOMAIN-KEYWORD,speedtest,DIRECT
+
   # 新增：节点连接直连，减少路由器再次代理终端的节点连接
   - IP-CIDR,8.218.129.197/32,DIRECT,no-resolve
   - IP-CIDR,161.117.255.242/32,DIRECT,no-resolve
@@ -1000,27 +1012,10 @@ rules:
   - IP-CIDR,72.146.20.246/32,AI-US,no-resolve
   - IP-CIDR,74.248.148.7/32,AI-US,no-resolve
 
-  # 原有抖音媒体资源直连
-  - DOMAIN-SUFFIX,douyincdn.com,DIRECT
-  - DOMAIN-SUFFIX,douyinliving.com,DIRECT
-  - DOMAIN-SUFFIX,douyinvod.com,DIRECT
-  - DOMAIN-SUFFIX,douyinpic.com,DIRECT
-  - DOMAIN-SUFFIX,bytegecko.com,DIRECT
-  - DOMAIN-SUFFIX,byteeffecttos.com,DIRECT
-  - DOMAIN-SUFFIX,byteimg.com,DIRECT
-  - DOMAIN-SUFFIX,ecombdimg.com,DIRECT
-  - DOMAIN-SUFFIX,bytehwm.com,DIRECT
-  - DOMAIN-SUFFIX,bytecdn.com,DIRECT
-  - DOMAIN-SUFFIX,zjcdn.com,DIRECT
-  - DOMAIN-KEYWORD,awememusicpgc,DIRECT
-  - DOMAIN-KEYWORD,api-play,DIRECT
-
-  # 原有抖音属地检测/API：香港80
-  - DOMAIN-SUFFIX,snssdk.com,Douyin-IP
-  - DOMAIN-SUFFIX,amemv.com,Douyin-IP
-
   # 国内域名优先直连：即使 CDN 位于国外，仍按国内站点直连。
   # AI 与抖音专用规则位于上方，继续按原定线路处理。
+  - DOMAIN-SUFFIX,snssdk.com,Douyin-IP
+  - DOMAIN-SUFFIX,amemv.com,Douyin-IP
   - DOMAIN-SUFFIX,cn,DIRECT
   - GEOSITE,CN,DIRECT
 
