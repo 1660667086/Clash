@@ -1,9 +1,21 @@
-
 port: 7890
 allow-lan: true
-mode: global
+mode: rule
 log-level: info
 external-controller: 127.0.0.1:9090
+
+# DNS 设置（可根据需要调整）
+dns:
+  enable: true
+  listen: 0.0.0.0:5353
+  ipv6: false
+  enhanced-mode: fake-ip
+  nameserver:
+    - 223.5.5.5
+    - 119.29.29.29
+  fallback:
+    - 8.8.8.8
+    - 1.1.1.1
 
 proxies:
   - name: "Hysteria2-Node"
@@ -15,13 +27,19 @@ proxies:
     skip-cert-verify: true
     obfs: salamander
     obfs-password: "5d6f8b0b9fa6dfb6602f97a8b9a9baff"
-    # pinSHA256: "78260F11A55C43381137877D02889D33233B2BA69B04B52F36B735C57CCBF697"
 
 proxy-groups:
-  - name: "GLOBAL"
+  # 手动选择或自动测速的主策略组
+  - name: "PROXY"
     type: select
     proxies:
       - "Hysteria2-Node"
 
 rules:
-  - MATCH,GLOBAL
+  # 自定义规则示例
+  - DOMAIN-SUFFIX,local,DIRECT
+  - IP-CIDR,127.0.0.0/8,DIRECT
+  - IP-CIDR,192.168.0.0/16,DIRECT
+  
+  # 默认兜底规则，所有未匹配的流量走 PROXY 策略组（即 Hysteria 2 节点）
+  - MATCH,PROXY
