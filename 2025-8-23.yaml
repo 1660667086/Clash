@@ -42,4 +42,4 @@ rules:
   - IP-CIDR,192.168.0.0/16,DIRECT
   
   # 默认兜底规则，所有未匹配的流量走 PROXY 策略组（即 Hysteria 2 节点）
-  - MATCH,PROXY
+  - MATCH,PROX
