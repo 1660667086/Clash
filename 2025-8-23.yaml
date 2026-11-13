@@ -1,43 +1,17 @@
-# 国外 AI 分流配置；OpenClash 优化版；日期：2026-09-28
-# 唯一节点：SS-24061；国外代理规则统一指向 PROXY。
-# 地理规则仍可能误判；抖音两个原有代理域名及 IDM 专用入口继续走该节点。
-# 已列出的域名及其适用子域覆盖网页、手机与桌面客户端；未知域名仍可能遗漏。
-# 共用的登录、验证码、存储、Bing/GitHub 主机也可能承载非 AI 请求；这些请求同走新节点。
-# 不依赖新增 AI 远程规则集；国内分流使用 OpenClash 的 GeoSite、原 GEOIP 数据和本地 1.yaml。
-# 国内域名直连使用 OpenClash 的 GeoSite.dat 中国域名列表，需在插件内保持数据库可用。
-# OpenClash 需运行在规则模式，且接管设备流量/DNS/UDP；本文件不会自动更改路由器防火墙。
-# 启用后重启 OpenClash，手机重新连接 Wi-Fi 并完全退出后重开 AI App。
-# 插件的 DNS / 嗅探覆写应保留本文件设置；自定义规则不得抢在 AI 规则前。
-# DNS 设置不能决定网站看到的出口 IP；实际出口仍取决于命中节点及其中转。
-# 此文件无法强制路由器接管设备自带的 VPN / 私密中继 / 加密 DNS。
-# 资料：MetaCubeX/meta-rules-dat category-ai-!cn（下载后内嵌快照）
-# https://help.openai.com/en/articles/9247338-network-recommendations-for-chatgpt-errors-on-web-and-apps
-# https://code.claude.com/docs/en/network-config
-# https://docs.github.com/en/copilot/reference/copilot-allowlist-reference
-# https://cursor.com/docs/enterprise/network-configuration
-# https://wiki.metacubex.one/en/config/sniff/
-# https://wiki.metacubex.one/en/config/dns/
+# Clash Mi 多设备配置：唯一节点 SS-28326；使用规则模式。
+# GEO 分类需客户端可用；代理节点未启用 UDP。
+# 该配置包含代理密码，请仅发送给可信任的人。
+# 原 IDM 专用入口与本地规则文件不适用于此独立配置，已移除。
+# 抖音 snssdk.com、amemv.com 原有代理规则保留。
+# 苹果账号与礼品卡结账走代理，使用时请复测。
 
-port: 7890
-socks-port: 7891
-redir-port: 7892
-allow-lan: true
+allow-lan: false
 mode: rule
 log-level: info
-external-controller: 0.0.0.0:9090
-
-# Dedicated LAN-only HTTP/SOCKS listener for IDM. Do not expose it to WAN.
-listeners:
-  - name: idm-in
-    type: mixed
-    listen: 192.168.100.1
-    port: 17890
-    udp: false
 
 dns:
   enable: true
-  # OpenClash 默认 DNS 监听端口；插件设置可覆盖此项。
-  listen: 0.0.0.0:7874
+  # DNS 监听地址由客户端管理。
   ipv6: false
   enhanced-mode: redir-host
   fake-ip-range: 198.18.0.1/16
@@ -59,15 +33,15 @@ dns:
   direct-nameserver-follow-policy: false
   # 普通国外域名的备用解析通过新节点使用加密 DNS。
   fallback:
-    - "https://1.1.1.1/dns-query#SS-24061"
-    - "https://8.8.8.8/dns-query#SS-24061"
+    - "https://1.1.1.1/dns-query#SS-28326"
+    - "https://8.8.8.8/dns-query#SS-28326"
   # AI 域名若需由本机解析，使用新节点进行加密 DNS 查询。
   # Fake-IP 模式下，能由节点远程解析的连接仍交给相应节点处理。
   # YAML 锚点仅用于复用同一组 DNS 地址。
   nameserver-policy:
     "+.openai.com": &ai_us_dns
-      - "https://1.1.1.1/dns-query#SS-24061"
-      - "https://8.8.8.8/dns-query#SS-24061"
+      - "https://1.1.1.1/dns-query#SS-28326"
+      - "https://8.8.8.8/dns-query#SS-28326"
     # 新增：沿用现有代理 DNS，覆盖 Chrome Gemini 资格检测和 TikTok
     "registry.npmjs.org": *ai_us_dns
     "raw.githubusercontent.com": *ai_us_dns
@@ -440,7 +414,7 @@ sniffer:
   parse-pure-ip: true
   # 使用识别到的域名作为目标，减少客户端缓存旧 IP 对连接的影响。
   override-destination: true
-  # 新增：不嗅探代理节点的外层连接，避免 obfs 伪装 Host 改写节点目标
+  # 不嗅探代理节点的外层连接，避免混淆流量被误判。
   skip-dst-address:
     - 192.243.115.105/32
   sniff:
@@ -452,10 +426,10 @@ sniffer:
       ports: [443, 8443]
 
 proxies:
-  - name: SS-24061
+  - name: SS-28326
     type: ss
-        server: 192.243.115.105
-    port: 28326
+    server: 192.243.115.105
+    port: 24061
     cipher: aes-256-gcm
     password: "Nbh4s27LyT"
     plugin: obfs
@@ -467,21 +441,12 @@ proxy-groups:
   - name: PROXY
     type: select
     proxies:
-      - SS-24061
-
-rule-providers:
-  # 沿用用户原有文件，其内容未提供，不擅自更改。
-  adblock:
-    type: file
-    behavior: classical
-    path: ./rule_provider/1.yaml
+      - SS-28326
 
 rules:
   # 节点服务器本身直连，避免外层连接形成代理循环。
   - IP-CIDR,192.243.115.105/32,DIRECT,no-resolve
-  # Traffic entering the IDM-only port always uses the dedicated node.
-  - IN-NAME,idm-in,PROXY
-  # WhatsApp via the existing US policy
+  # WhatsApp 使用现有代理策略。
   - DOMAIN-SUFFIX,whatsapp.com,PROXY
   - DOMAIN-SUFFIX,whatsapp.net,PROXY
   - DOMAIN-SUFFIX,whatsapp.biz,PROXY
@@ -996,11 +961,9 @@ rules:
   - DOMAIN-SUFFIX,cn,DIRECT
   - GEOSITE,CN,DIRECT
 
-  # 国内 IP 直连，避免本地规则集将国内下载 CDN 送往代理。
+  # 国内 IP 直连。
   - GEOIP,CN,DIRECT
 
-  # 沿用原规则集；仅在以上 AI、抖音及国内域名/IP 规则未命中时适用。
-  - RULE-SET,adblock,PROXY
 
   # 剩余国外流量（含普通 AWS/Lightsail）走新节点。
   - MATCH,PROXY
